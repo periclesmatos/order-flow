@@ -32,7 +32,7 @@ export class ListProductsUseCase extends ProductUseCase {
     const { products, total } = await this.productRepository.findAll(filters);
     const totalPages = Math.ceil(total / dto.limit);
 
-    this.logger.debug({ total, page: dto.page, limit: dto.limit }, 'products listed');
+    this.logger.debug({ products, total, page: dto.page, limit: dto.limit }, 'PRODUCTS LISTED');
 
     return {
       data: products.map((product) => ProductPresenter.toResponse(product)),

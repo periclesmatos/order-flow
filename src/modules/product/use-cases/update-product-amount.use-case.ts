@@ -21,7 +21,7 @@ export class UpdateProductAmountUseCase extends ProductUseCase {
     const product = await this.findOrFail(id);
     product.amount = dto.amount;
     const updated = await this.productRepository.update(id, product);
-    this.logger.info({ productId: id, amount: dto.amount }, 'product amount updated');
+    this.logger.info({ productId: id, amount: dto.amount }, 'PRODUCT AMOUNT UPDATED');
     return ProductPresenter.toResponse(updated);
   }
 }

@@ -17,6 +17,6 @@ export class DeleteProductUseCase extends ProductUseCase {
   async execute(id: string): Promise<void> {
     const product = await this.findOrFail(id);
     await this.productRepository.delete(product.id);
-    this.logger.info({ productId: id }, 'product deleted');
+    this.logger.info({ productId: id }, 'PRODUCT DELETED');
   }
 }

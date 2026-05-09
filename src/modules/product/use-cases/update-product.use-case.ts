@@ -29,7 +29,7 @@ export class UpdateProductUseCase extends ProductUseCase {
     }
 
     const updated = await this.productRepository.update(id, product);
-    this.logger.info({ productId: id }, 'product updated');
+    this.logger.info({ productId: id }, 'PRODUCT UPDATED');
     return ProductPresenter.toResponse(updated);
   }
 }

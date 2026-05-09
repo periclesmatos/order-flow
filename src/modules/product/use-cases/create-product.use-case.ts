@@ -29,7 +29,7 @@ export class CreateProductUseCase extends ProductUseCase {
     });
 
     const created = await this.productRepository.create(product);
-    this.logger.info({ productId: created.id, name: created.name }, 'product created');
+    this.logger.info({ productId: created.id, name: created.name }, 'PRODUCT CREATED');
     return ProductPresenter.toResponse(created);
   }
 }

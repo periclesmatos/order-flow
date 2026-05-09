@@ -18,7 +18,7 @@ export class GetProductUseCase extends ProductUseCase {
 
   async execute(id: string): Promise<ProductResponse> {
     const product = await this.findOrFail(id);
-    this.logger.debug({ productId: id }, 'product fetched');
+    this.logger.debug({ productId: id }, 'PRODUCT FETCHED');
     return ProductPresenter.toResponse(product);
   }
 }

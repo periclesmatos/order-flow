@@ -22,7 +22,7 @@ export class UpdateProductPriceUseCase extends ProductUseCase {
     const product = await this.findOrFail(id);
     product.price = Money.fromFloat(dto.price);
     const updated = await this.productRepository.update(id, product);
-    this.logger.info({ productId: id, price: dto.price }, 'product price updated');
+    this.logger.info({ productId: id, price: dto.price }, 'PRODUCT PRICE UPDATED');
     return ProductPresenter.toResponse(updated);
   }
 }

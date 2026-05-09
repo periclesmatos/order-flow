@@ -19,6 +19,7 @@ const isDev = process.env.NODE_ENV !== 'production';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        level: isDev ? 'debug' : 'info',
         genReqId: () => crypto.randomUUID(),
         autoLogging: false,
         serializers: {

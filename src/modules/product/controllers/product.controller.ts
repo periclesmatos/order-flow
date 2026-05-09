@@ -36,49 +36,49 @@ export class ProductController {
   @Post()
   @HttpCode(201)
   createProduct(@Body(new ZodValidationPipe(CreateProductSchema)) body: CreateProductDto) {
-    this.logger.debug({ body }, 'createProduct request');
+    this.logger.debug({ body }, 'CREATE PRODUCT REQUEST');
     return this.createProductUseCase.execute(body);
   }
 
   @Get()
   @HttpCode(200)
   listProducts(@Query(new ZodValidationPipe(ListProductsSchema)) query: ListProductsDto) {
-    this.logger.debug({ page: query.page, limit: query.limit }, 'listProducts request');
+    this.logger.debug({ page: query.page, limit: query.limit }, 'LIST PRODUCTS REQUEST');
     return this.listProductsUseCase.execute(query);
   }
 
   @Get(':id')
   @HttpCode(200)
   getProduct(@Param('id') id: string) {
-    this.logger.debug({ id }, 'getProduct request');
+    this.logger.debug({ id }, 'GET PRODUCT REQUEST');
     return this.getProductUseCase.execute(id);
   }
 
   @Patch(':id')
   @HttpCode(200)
   updateProduct(@Param('id') id: string, @Body(new ZodValidationPipe(UpdateProductSchema)) body: UpdateProductDto) {
-    this.logger.debug({ id }, 'updateProduct request');
+    this.logger.debug({ id }, 'UPDATE PRODUCT REQUEST');
     return this.updateProductUseCase.execute(id, body);
   }
 
   @Patch(':id/price')
   @HttpCode(200)
   updateProductPrice(@Param('id') id: string, @Body(new ZodValidationPipe(UpdateProductPriceSchema)) body: UpdateProductPriceDto) {
-    this.logger.debug({ id, price: body.price }, 'updateProductPrice request');
+    this.logger.debug({ id, price: body.price }, 'UPDATE PRODUCT PRICE REQUEST');
     return this.updateProductPriceUseCase.execute(id, body);
   }
 
   @Patch(':id/amount')
   @HttpCode(200)
   updateProductAmount(@Param('id') id: string, @Body(new ZodValidationPipe(UpdateProductAmountSchema)) body: UpdateProductAmountDto) {
-    this.logger.debug({ id, amount: body.amount }, 'updateProductAmount request');
+    this.logger.debug({ id, amount: body.amount }, 'UPDATE PRODUCT AMOUNT REQUEST');
     return this.updateProductAmountUseCase.execute(id, body);
   }
 
   @Delete(':id')
   @HttpCode(204)
   deleteProduct(@Param('id') id: string) {
-    this.logger.debug({ id }, 'deleteProduct request');
+    this.logger.debug({ id }, 'DELETE PRODUCT REQUEST');
     return this.deleteProductUseCase.execute(id);
   }
 }

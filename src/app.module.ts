@@ -9,6 +9,7 @@ import { ProductModule } from './modules/product/product.module.js';
 import { CustomerModule } from './modules/customer/customer.module.js';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
+import type { IncomingMessage, ServerResponse } from 'http';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -23,13 +24,18 @@ const isDev = process.env.NODE_ENV !== 'production';
         genReqId: () => crypto.randomUUID(),
         autoLogging: false,
         serializers: {
-          req: (req: { method: string; url: string }) => ({ method: req.method, url: req.url }),
-          res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+          req: (req: IncomingMessage) => ({ method: req.method, url: req.url }),
+          res: (res: ServerResponse) => ({ statusCode: res.statusCode }),
         },
         ...(isDev && {
           transport: {
             target: 'pino-pretty',
-            options: { colorize: true, singleLine: false },
+            options: {
+              colorize: true,
+              singleLine: false,
+              translateTime: 'SYS:dd:mm:yyyy HH:MM:ss.l',
+              ignore: 'pid,hostname',
+            },
           },
         }),
       },

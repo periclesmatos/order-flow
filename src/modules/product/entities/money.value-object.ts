@@ -1,12 +1,14 @@
+import { MoneyNegativeCentsError, MoneyNegativeFactorError, MoneyNonIntegerCentsError, MoneySubtractWouldGoNegativeError } from '../errors/money.errors.js';
+
 export class Money {
   private readonly _cents: number;
 
   private constructor(cents: number) {
     if (!Number.isInteger(cents)) {
-      throw new Error('Money amount must be an integer number of cents.');
+      throw new MoneyNonIntegerCentsError();
     }
     if (cents < 0) {
-      throw new Error('Money amount cannot be negative.');
+      throw new MoneyNegativeCentsError();
     }
     this._cents = cents;
   }
@@ -46,14 +48,14 @@ export class Money {
   subtract(other: Money): Money {
     const result = this._cents - other._cents;
     if (result < 0) {
-      throw new Error('Money subtraction cannot result in a negative amount.');
+      throw new MoneySubtractWouldGoNegativeError();
     }
     return new Money(result);
   }
 
   multiply(factor: number): Money {
     if (factor < 0) {
-      throw new Error('Money multiplication factor cannot be negative.');
+      throw new MoneyNegativeFactorError();
     }
     return new Money(Math.round(this._cents * factor));
   }

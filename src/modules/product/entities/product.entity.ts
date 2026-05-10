@@ -1,3 +1,4 @@
+import { ProductEmptyNameError, ProductNegativeAmountError, ProductNegativePriceError } from '../errors/product.errors.js';
 import { Money } from './money.value-object.js';
 
 export interface ProductProps {
@@ -73,19 +74,19 @@ export class Product {
   }
 
   set name(value: string) {
-    if (!value?.trim()) throw new Error('Product name cannot be empty.');
+    if (!value?.trim()) throw new ProductEmptyNameError();
     this._props.name = value.trim();
     this._props.updatedAt = new Date();
   }
 
   set price(value: Money) {
-    if (value.cents < 0) throw new Error('Product price cannot be negative.');
+    if (value.cents < 0) throw new ProductNegativePriceError();
     this._props.price = value;
     this._props.updatedAt = new Date();
   }
 
   set amount(value: number) {
-    if (value < 0) throw new Error('Product amount cannot be negative.');
+    if (value < 0) throw new ProductNegativeAmountError();
     this._props.amount = value;
     this._props.updatedAt = new Date();
   }

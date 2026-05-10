@@ -1,27 +1,27 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { ProductUseCase } from './product.use-case.js';
 import { ProductPresenter } from '../presenters/product.presenter.js';
 import { PRODUCT_REPOSITORY } from '../repositories/product.repository.interface.js';
 import type { IProductRepository } from '../repositories/product.repository.interface.js';
 import type { UpdateProductAmountDto } from '../dtos/update-product-amount.dto.js';
 import type { ProductResponse } from '../presenters/product.presenter.js';
+import { ProductNotFoundError } from '../errors/product.errors.js';
 
 @Injectable()
-export class UpdateProductAmountUseCase extends ProductUseCase {
+export class UpdateProductAmountUseCase {
   constructor(
     @InjectPinoLogger(UpdateProductAmountUseCase.name)
     private readonly logger: PinoLogger,
-    @Inject(PRODUCT_REPOSITORY) repository: IProductRepository,
-  ) {
-    super(repository);
-  }
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
+  ) {}
 
   async execute(id: string, dto: UpdateProductAmountDto): Promise<ProductResponse> {
-    const product = await this.findOrFail(id);
+    const product = await this.productRepository.findById(id);
+    if (!product) throw new ProductNotFoundError(id);
     product.amount = dto.amount;
     const updated = await this.productRepository.update(id, product);
-    this.logger.info({ productId: id, amount: dto.amount }, 'PRODUCT AMOUNT UPDATED');
+    this.logger.info({ product: updated }, 'PRODUCT AMOUNT UPDATED');
     return ProductPresenter.toResponse(updated);
   }
 }

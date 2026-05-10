@@ -15,7 +15,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const correlationId = request.id;
 
     let statusCode: number;
-    let message: string;
+    let message: string | string[] | Record<string, unknown>;
+    let validationErrors: unknown;
 
     if (exception instanceof DomainError) {
       statusCode = exception.statusCode;
@@ -23,7 +24,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       const res = exception.getResponse();
-      message = typeof res === 'string' ? res : ((res as { message?: string }).message ?? exception.message);
+      if (typeof res === 'string') {
+        message = res;
+      } else {
+        const body = res as Record<string, unknown>;
+        message = (body.message as string | string[] | undefined) ?? (Object.keys(body).length > 0 ? body : exception.message);
+        validationErrors = body.errors;
+      }
     } else {
       statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
@@ -31,12 +38,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const stack = exception instanceof Error ? exception.stack : undefined;
 
+    const logMessage = typeof message === 'string' ? message : Array.isArray(message) ? message.join('; ') : JSON.stringify(message);
+
     if (statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
-      this.logger.error({ statusCode, correlationId, stack }, message);
+      this.logger.error({ statusCode, correlationId, stack }, logMessage);
     } else {
-      this.logger.warn({ statusCode, correlationId }, message);
+      this.logger.warn({ statusCode, correlationId }, logMessage);
     }
 
-    response.status(statusCode).json({ statusCode, message });
+    response.status(statusCode).json({
+      statusCode,
+      message,
+      ...(validationErrors !== undefined ? { errors: validationErrors } : {}),
+    });
   }
 }

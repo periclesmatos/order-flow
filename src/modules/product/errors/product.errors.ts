@@ -18,3 +18,30 @@ export class ProductNotFoundError extends DomainError {
     this.name = 'ProductNotFoundError';
   }
 }
+
+export class ProductEmptyNameError extends DomainError {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+
+  constructor() {
+    super('Product name cannot be empty.');
+    this.name = 'ProductEmptyNameError';
+  }
+}
+
+export class ProductNegativePriceError extends DomainError {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+
+  constructor() {
+    super('Product price cannot be negative.');
+    this.name = 'ProductNegativePriceError';
+  }
+}
+
+export class ProductNegativeAmountError extends DomainError {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+
+  constructor() {
+    super('Product amount cannot be negative.');
+    this.name = 'ProductNegativeAmountError';
+  }
+}

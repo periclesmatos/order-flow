@@ -8,15 +8,14 @@ datasource db {
 }
 
 model Product {
-  id        String   @id @unique @default(uuid())
-  name      String
-  price     Int
-  amount    Int
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @unique @default(uuid())
+  name             String
+  price            Int
+  stockOnHand      Int
+  reservedQuantity Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("products")
 }
-
-

@@ -1,98 +1,247 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Order Flow
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST para gestão de clientes, produtos e pedidos, com arquitetura modular em camadas (domínio, aplicação, infraestrutura e apresentação).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-7.8-2D3748)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D)](https://redis.io/)
+[![Zod](https://img.shields.io/badge/Zod-4-3E67B1)](https://zod.dev/)
+[![Swagger](https://img.shields.io/badge/Swagger-11.4-brightgreen)](https://swagger.io/)
+[![Jest](https://img.shields.io/badge/Jest-30-C21325)](https://jestjs.io/)
+[![Supertest](https://img.shields.io/badge/Supertest-7-lightgrey)](https://www.npmjs.com/package/supertest)
+[![Pino](https://img.shields.io/badge/Pino-4.6-black)](https://getpino.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-UNLICENSED-lightgrey)](#licença)
 
-## Description
+## Visão geral
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O **Order Flow** é um backend em NestJS que expõe recursos versionados em `/api/v1`. Hoje o foco está em **Customer** e **Product**, com modelo de dados de **Order** já definido no Prisma, mas sem casos de uso nem rotas de pedidos implementados.
 
-## Project setup
+Principais capacidades atuais:
 
-```bash
-$ npm install
+- CRUD de clientes com validação de e-mail e telefone (`libphonenumber-js`)
+- Gestão de endereços por cliente (criar, atualizar, remover, definir padrão)
+- CRUD de produtos com preço em centavos, estoque e quantidade reservada
+- Cache Redis em consulta de produto por ID
+- Health checks (liveness e readiness com Prisma)
+- Documentação OpenAPI em `/api/docs`
+
+## Stack
+
+| Camada | Tecnologia |
+|--------|------------|
+| Runtime | Node.js 20+ |
+| Framework | NestJS 11 |
+| Linguagem | TypeScript 5.7 (ESM) |
+| ORM | Prisma 7 + PostgreSQL 16 |
+| Cache | `@nestjs/cache-manager` + Redis 7 (`@keyv/redis`) |
+| Validação HTTP | Zod + `ZodValidationPipe` |
+| Logs | Pino (`nestjs-pino`) |
+| API docs | Swagger (`@nestjs/swagger`) |
+| Segurança HTTP | Helmet, CORS configurável, rate limit (`@nestjs/throttler`) |
+| Transações | `nestjs-cls` + `@nestjs-cls/transactional` (adapter Prisma) |
+| Testes | Jest 30 + Supertest (e2e) |
+
+## Arquitetura
+
+Cada módulo de negócio segue separação por responsabilidade:
+
+```
+presentation/   → controllers, presenters, decorators OpenAPI
+application/    → use cases, DTOs (Zod), cache keys
+domain/         → entidades, value objects, erros de domínio, interfaces de repositório
+infrastructure/ → implementações Prisma dos repositórios
 ```
 
-## Compile and run the project
+Fluxo de uma requisição:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+HTTP → Controller → Use Case → Repository (Prisma) → PostgreSQL
+                      ↓
+                 Domain (entidades / regras)
+                      ↓
+                 Cache (Redis) — apenas em Get Product hoje
 ```
 
-## Run tests
+Módulos registrados em `AppModule`:
 
-```bash
-# unit tests
-$ npm run test
+| Módulo | Estado |
+|--------|--------|
+| `CustomerModule` | Implementado (API + domínio + Prisma) |
+| `ProductModule` | Implementado (API + domínio + Prisma + cache) |
+| `OrderModule` | Registrado, módulo vazio `[planejado]` |
+| `CoreModule` | Prisma global, health, cache, transações CLS |
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```
+order-flow/
+├── prisma/                 # schema e migrations
+├── src/
+│   ├── main.ts
+│   ├── app.module.ts
+│   ├── common/             # pipes, filters, interceptors, middleware
+│   ├── core/               # prisma, cache, health
+│   ├── modules/
+│   │   ├── customer/
+│   │   ├── product/
+│   │   └── order/          # [planejado]
+│   ├── shared/             # bootstrap, logger, interfaces
+│   └── generated/prisma/   # client gerado
+└── test/                   # unit + e2e
 ```
 
-## Deployment
+## Modelo de dados (Prisma)
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Entidades persistidas:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- **Customer** — nome, e-mail único, telefone, `isActive`
+- **Address** — vinculado ao cliente, `isDefault`, cascade on delete
+- **Product** — nome, `price` (inteiro, centavos), `stockOnHand`, `reservedQuantity`, `isActive`
+- **Order**, **OrderItem**, **OrderDeliveryAddress** — schema e enum `OrderStatus` existem; API de pedidos `[planejado]`
+
+## Pré-requisitos
+
+- Node.js 20 ou superior
+- npm
+- Docker e Docker Compose (para Postgres e Redis locais)
+
+## Como rodar
+
+### 1. Infraestrutura
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Sobe PostgreSQL (`5432`) e Redis (`6379`) conforme `docker-compose.yml`.
 
-## Resources
+### 2. Variáveis de ambiente
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+cp .env.example .env
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 3. Banco e client Prisma
 
-## Support
+```bash
+npm install
+npm run prisma:generate
+npm run prisma:migrate
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 4. API
 
-## Stay in touch
+```bash
+npm run start:dev
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+A aplicação sobe na porta definida em `PORT` (padrão `3000`).
 
-## License
+### Endpoints úteis
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+| Recurso | URL |
+|---------|-----|
+| Swagger UI | http://localhost:3000/api/docs |
+| OpenAPI JSON | http://localhost:3000/api/docs-json |
+| Liveness | http://localhost:3000/health |
+| Readiness (DB) | http://localhost:3000/health/ready |
+
+Prefixo global da API: `/api/v1` (health e docs ficam fora do prefixo).
+
+### Recursos REST (resumo)
+
+**Produtos** (`/api/v1/products`)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/` | Criar produto |
+| GET | `/` | Listar (paginação, filtros, ordenação) |
+| GET | `/:id` | Buscar por ID (com cache) |
+| PATCH | `/:id` | Atualizar dados gerais |
+| PATCH | `/:id/price` | Atualizar preço |
+| PATCH | `/:id/amount` | Atualizar estoque |
+| DELETE | `/:id` | Remover |
+
+**Clientes** (`/api/v1/customers`)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/` | Criar cliente |
+| GET | `/` | Listar (paginado) |
+| GET | `/:id` | Buscar por ID |
+| PATCH | `/:id` | Atualizar |
+| DELETE | `/:id` | Remover |
+| POST | `/:customerId/addresses` | Criar endereço |
+| PATCH | `/:customerId/addresses/:addressId` | Atualizar endereço |
+| PATCH | `/:customerId/addresses/:addressId/default` | Definir endereço padrão |
+| DELETE | `/:customerId/addresses/:addressId` | Remover endereço |
+
+Detalhes de payloads e respostas: Swagger.
+
+## Variáveis de ambiente
+
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `NODE_ENV` | Ambiente de execução | `development` |
+| `PORT` | Porta HTTP | `3000` |
+| `DATABASE_URL` | Connection string PostgreSQL | `postgresql://postgres:postgres@localhost:5432/order_flow` |
+| `REDIS_URL` | URL do Redis para cache | `redis://localhost:6379` |
+| `PRODUCT_CACHE_TTL_MS` | TTL do cache de produto (ms) | `300000` (opcional; padrão 5 min) |
+| `LOG_LEVEL` | Nível do Pino | `debug` |
+| `CORS_ORIGIN` | Origens permitidas (vírgula) | omitir = todas em dev |
+
+## Scripts npm
+
+| Script | Uso |
+|--------|-----|
+| `npm run start:dev` | Desenvolvimento com watch |
+| `npm run build` | Build de produção |
+| `npm run start:prod` | Executar `dist/main` |
+| `npm run test` | Testes unitários |
+| `npm run test:e2e` | Testes e2e |
+| `npm run test:cov` | Cobertura |
+| `npm run typecheck` | Verificação TypeScript |
+| `npm run lint` | ESLint |
+| `npm run prisma:generate` | Gerar client Prisma (ESM) |
+| `npm run prisma:migrate` | Migrations em dev |
+| `npm run prisma:migrate:deploy` | Migrations em produção |
+| `npm run prisma:studio` | UI do Prisma |
+
+## Testes
+
+```bash
+# unitários
+npm run test
+
+# e2e (produtos e health)
+npm run test:e2e
+```
+
+Há cobertura unitária ampla em customer e product; e2e inclui `products.e2e-spec.ts` e `health.e2e-spec.ts`.
+
+## Decisões técnicas
+
+- **Arquitetura em camadas por módulo** — isola regras de negócio (entidades, VOs, erros `DomainError`) da infraestrutura Nest/Prisma e facilita testes com repositórios in-memory.
+- **Use cases explícitos** — cada operação de aplicação é uma classe injetável; controllers permanecem finos (validação + apresentação).
+- **Zod nos DTOs** — validação declarativa reutilizável em pipe global por endpoint, alinhada ao TypeScript.
+- **Prisma com client em `src/generated/prisma`** — ESM nativo (`"type": "module"`) com script de patch pós-generate.
+- **Preço em centavos (`Int`)** — evita ponto flutuante; `Money` no domínio encapsula regras de valor.
+- **Cache só em `GetProduct`** — reduz carga em leitura frequente; TTL configurável; listagem não cacheada para consistência de filtros.
+- **Transações via CLS + Prisma adapter** — propaga contexto transacional sem acoplar use cases ao `PrismaService` diretamente em todos os fluxos.
+- **Observabilidade com Pino** — logs estruturados; `LoggingInterceptor` e `AllExceptionsFilter` com `correlationId` (request id).
+- **Throttler global** — 100 req/min por padrão; health checks isentos (`@SkipThrottle`).
+- **Helmet + CORS + shutdown hooks** — endurecimento HTTP e encerramento gracioso em produção.
+- **Swagger na raiz `/api/docs`** — contrato vivo para integração frontend ou QA.
+
+## Roadmap
+
+Itens alinhados a `projeto.md` e lacunas do código:
+
+1. **[planejado] Order Service** — implementar `OrderModule` (use cases, repositórios, controller) sobre modelos `Order`, `OrderItem` e `OrderDeliveryAddress`.
+2. **[planejado] Descrição no produto** — campo e API de produto ainda não existem no schema.
+3. **[planejado] Categoria de produto** — nova entidade e relacionamento com `Product`.
+4. **[planejado] Autenticação e autorização** — camada de segurança de alto nível ainda não presente.
+5. **[planejado] CI/CD** — não há workflows em `.github/workflows/` hoje.
+

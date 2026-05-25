@@ -49,6 +49,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(statusCode).json({
       statusCode,
       message,
+      ...(correlationId !== undefined ? { correlationId } : {}),
       ...(validationErrors !== undefined ? { errors: validationErrors } : {}),
     });
   }

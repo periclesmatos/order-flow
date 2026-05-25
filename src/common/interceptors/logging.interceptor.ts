@@ -13,15 +13,33 @@ export class LoggingInterceptor implements NestInterceptor {
     const userId = req.user?.id ?? undefined;
     const startedAt = Date.now();
 
-    this.logger.info({ method, path: url, correlationId, userId }, 'INCOMING REQUEST');
-
     return next.handle().pipe(
       tap(() => {
         const res = context.switchToHttp().getResponse<Response>();
-        this.logger.info({ method, path: url, statusCode: res.statusCode, durationMs: Date.now() - startedAt, correlationId }, 'REQUEST COMPLETED');
+        this.logger.info(
+          {
+            method,
+            path: url,
+            statusCode: res.statusCode,
+            durationMs: Date.now() - startedAt,
+            correlationId,
+            ...(userId !== undefined ? { userId } : {}),
+          },
+          'REQUEST COMPLETED',
+        );
       }),
       catchError((error: Error) => {
-        this.logger.error({ method, path: url, correlationId, message: error.message, stack: error.stack }, 'REQUEST FAILED');
+        this.logger.error(
+          {
+            method,
+            path: url,
+            correlationId,
+            durationMs: Date.now() - startedAt,
+            message: error.message,
+            stack: error.stack,
+          },
+          'REQUEST FAILED',
+        );
         return throwError(() => error);
       }),
     );

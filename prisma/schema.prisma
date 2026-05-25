@@ -7,6 +7,38 @@ datasource db {
   provider = "postgresql"
 }
 
+model Customer {
+  id        String    @id @unique @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
+
+  @@map("customers")
+}
+
+model Address {
+  id           String   @id @unique @default(uuid())
+  street       String
+  number       String
+  complement   String   @default("")
+  neighborhood String
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  isDefault    Boolean  @default(false)
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("addresses")
+}
+
 model Product {
   id               String   @id @unique @default(uuid())
   name             String

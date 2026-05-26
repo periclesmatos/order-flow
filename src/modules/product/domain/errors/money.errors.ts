@@ -1,4 +1,4 @@
-import { DomainError } from '../../../../common/errors/domain.error.js';
+import { DomainError } from '../../../../shared/domain/errors/domain.error.js';
 
 export class MoneyNonIntegerCentsError extends DomainError {
   readonly statusCode = 400;

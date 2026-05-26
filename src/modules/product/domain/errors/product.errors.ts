@@ -1,4 +1,4 @@
-import { DomainError } from '../../../../common/errors/domain.error.js';
+import { DomainError } from '../../../../shared/domain/errors/domain.error.js';
 
 export class ProductAlreadyExistsError extends DomainError {
   readonly statusCode = 409;
@@ -21,6 +21,14 @@ export class ProductEmptyNameError extends DomainError {
   constructor() {
     super('O nome do produto não pode estar vazio.');
     this.name = 'ProductEmptyNameError';
+  }
+}
+
+export class ProductEmptyDescriptionError extends DomainError {
+  readonly statusCode = 400;
+  constructor() {
+    super('A descrição do produto não pode estar vazia.');
+    this.name = 'ProductEmptyDescriptionError';
   }
 }
 

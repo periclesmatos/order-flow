@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface.js';
 import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface.js';
 import type { ListCustomersDto } from '../dtos/list-customers.dto.js';
-import type { PaginatedResponse } from '../../../../common/types/paginated-response.type.js';
+import type { PaginatedResponse } from '../../../../shared/application/paginated-response.type.js';
 import type { Customer } from '../../domain/entities/customer.entity.js';
 import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
 

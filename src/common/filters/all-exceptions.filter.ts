@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import type { Request, Response } from 'express';
-import { DomainError } from '../errors/domain.error.js';
+import { DomainError } from '../../shared/domain/errors/domain.error.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {

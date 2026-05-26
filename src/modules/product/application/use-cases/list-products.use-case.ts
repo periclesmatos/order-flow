@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
 import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
-import type { PaginatedResponse } from '../../../../common/types/paginated-response.type.js';
+import type { PaginatedResponse } from '../../../../shared/application/paginated-response.type.js';
 import type { ListProductsDto } from '../dtos/list-products.dto.js';
 import type { ProductFilters } from '../../domain/repositories/product.repository.interface.js';
 import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';

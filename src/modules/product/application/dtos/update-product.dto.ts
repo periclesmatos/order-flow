@@ -7,13 +7,19 @@ const UpdateProductObjectSchema = z.object({
     .max(100, 'Nome deve ter no máximo 100 caracteres')
     .trim()
     .optional(),
+  description: z
+    .string({ error: (issue) => (issue.input === undefined ? 'Descrição é obrigatória' : 'Descrição deve ser texto') })
+    .min(1, 'Descrição é obrigatória')
+    .max(255, 'Descrição deve ter no máximo 255 caracteres')
+    .trim()
+    .optional(),
   isActive: z
     .boolean({ error: () => 'isActive deve ser verdadeiro ou falso' })
     .optional(),
 });
 
 export const UpdateProductSchema = UpdateProductObjectSchema.refine(
-  (d) => d.name !== undefined || d.isActive !== undefined,
+  (d) => d.name !== undefined || d.description !== undefined || d.isActive !== undefined,
   { message: 'Informe pelo menos um campo para atualizar.' },
 );
 

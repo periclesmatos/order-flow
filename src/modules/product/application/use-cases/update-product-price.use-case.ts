@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
+import { CACHE_SERVICE } from '../../../../core/cache/cache.token.js';
+import type { ICacheService } from '../../../../core/cache/cache.interface.js';
 import { Money } from '../../domain/entities/money.value-object.js';
 import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
 import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
@@ -15,8 +15,8 @@ export class UpdateProductPriceUseCase {
     private readonly logger: ILogger,
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
-    @Inject(CACHE_MANAGER)
-    private readonly cache: Cache,
+    @Inject(CACHE_SERVICE)
+    private readonly cache: ICacheService,
   ) {}
 
   async execute(id: string, dto: UpdateProductPriceDto): Promise<Product> {

@@ -3,6 +3,7 @@ import type { Product } from '../../domain/entities/product.entity.js';
 export interface ProductResponse {
   id: string;
   name: string;
+  description: string;
   price: number;
   stockOnHand: number;
   reservedQuantity: number;
@@ -17,6 +18,7 @@ export class ProductPresenter {
     return {
       id: product.id,
       name: product.name,
+      description: product.description,
       price: product.price.toFloat(),
       stockOnHand: product.stockOnHand,
       reservedQuantity: product.reservedQuantity,

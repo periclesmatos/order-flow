@@ -3,12 +3,14 @@ import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 const CREATE_PRODUCT_BODY_EXAMPLE = {
   name: 'Notebook',
+  description: 'Notebook Dell Inspiron 15',
   price: 10.5,
   stockOnHand: 3,
 };
 
 const UPDATE_PRODUCT_BODY_EXAMPLE = {
   name: 'New Name',
+  description: 'New Description',
   isActive: false,
 };
 

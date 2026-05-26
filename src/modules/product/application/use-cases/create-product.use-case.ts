@@ -19,6 +19,7 @@ export class CreateProductUseCase {
     if (existing) throw new ProductAlreadyExistsError(dto.name);
     const product = Product.create({
       name: dto.name,
+      description: dto.description,
       price: Money.fromFloat(dto.price),
       stockOnHand: dto.stockOnHand,
     });

@@ -2,9 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ListProductsUseCase } from '@src/modules/product/application/use-cases/list-products.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
-import { Product } from '@src/modules/product/domain/entities/product.entity';
-import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { loggerProvider, provideProductUseCase } from '@test/helpers/testing-module';
+import { createTestProduct } from '../product-test.helpers';
 
 describe('ListProductsUseCase', () => {
   let useCase: ListProductsUseCase;
@@ -32,7 +31,7 @@ describe('ListProductsUseCase', () => {
   });
 
   it('maps filters and builds pagination meta', async () => {
-    const p = Product.create({ name: 'A', price: Money.zero(), stockOnHand: 0 });
+    const p = createTestProduct({ name: 'A', stockOnHand: 0 });
     repository.findAll.mockResolvedValue({ products: [p], total: 25 });
 
     const result = await useCase.execute({

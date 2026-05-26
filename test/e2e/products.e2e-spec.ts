@@ -3,6 +3,15 @@ import request from 'supertest';
 import { createE2eApp } from '../helpers/create-e2e-app.js';
 
 const PRODUCTS = '/api/v1/products';
+const DEFAULT_DESCRIPTION = 'Descrição do produto para testes';
+
+const productBody = (overrides: Record<string, unknown> = {}) => ({
+  name: 'Notebook',
+  description: DEFAULT_DESCRIPTION,
+  price: 10.5,
+  stockOnHand: 3,
+  ...overrides,
+});
 
 describe('Products API (e2e)', () => {
   let app: INestApplication;
@@ -18,12 +27,13 @@ describe('Products API (e2e)', () => {
   it('POST /api/v1/products creates a product and returns X-Request-Id', () => {
     return request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Notebook', price: 10.5, stockOnHand: 3 })
+      .send(productBody())
       .expect(201)
       .expect((res) => {
         expect(res.headers['x-request-id']).toEqual(expect.any(String));
         expect(res.body).toMatchObject({
           name: 'Notebook',
+          description: DEFAULT_DESCRIPTION,
           price: 10.5,
           stockOnHand: 3,
           reservedQuantity: 0,
@@ -37,7 +47,7 @@ describe('Products API (e2e)', () => {
   it('POST /api/v1/products returns 400 when body is invalid', () => {
     return request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: '', price: 10, stockOnHand: 1 })
+      .send({ name: '', description: DEFAULT_DESCRIPTION, price: 10, stockOnHand: 1 })
       .expect(400)
       .expect((res) => {
         expect(res.body).toMatchObject({ statusCode: 400 });
@@ -46,15 +56,22 @@ describe('Products API (e2e)', () => {
       });
   });
 
+  it('POST /api/v1/products returns 400 when description is missing', () => {
+    return request(app.getHttpServer())
+      .post(PRODUCTS)
+      .send({ name: 'Sem descrição', price: 10, stockOnHand: 1 })
+      .expect(400);
+  });
+
   it('POST /api/v1/products returns 409 when name already exists', async () => {
     await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Duplicado', price: 1, stockOnHand: 1 })
+      .send(productBody({ name: 'Duplicado', price: 1, stockOnHand: 1 }))
       .expect(201);
 
     return request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Duplicado', price: 2, stockOnHand: 2 })
+      .send(productBody({ name: 'Duplicado', price: 2, stockOnHand: 2 }))
       .expect(409)
       .expect((res) => {
         expect(res.body.statusCode).toBe(409);
@@ -64,7 +81,7 @@ describe('Products API (e2e)', () => {
   it('GET /api/v1/products lists created products', async () => {
     await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Mouse', price: 5, stockOnHand: 10 })
+      .send(productBody({ name: 'Mouse', price: 5, stockOnHand: 10 }))
       .expect(201);
 
     return request(app.getHttpServer())
@@ -73,7 +90,12 @@ describe('Products API (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.body.data).toHaveLength(1);
-        expect(res.body.data[0]).toMatchObject({ name: 'Mouse', price: 5, stockOnHand: 10 });
+        expect(res.body.data[0]).toMatchObject({
+          name: 'Mouse',
+          description: DEFAULT_DESCRIPTION,
+          price: 5,
+          stockOnHand: 10,
+        });
         expect(res.body.meta).toMatchObject({ total: 1, page: 1, limit: 10 });
       });
   });
@@ -81,7 +103,7 @@ describe('Products API (e2e)', () => {
   it('GET /api/v1/products/:id returns a product', async () => {
     const createRes = await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Keyboard', price: 199.99, stockOnHand: 2 });
+      .send(productBody({ name: 'Keyboard', price: 199.99, stockOnHand: 2 }));
 
     const id = createRes.body.id as string;
 
@@ -89,7 +111,13 @@ describe('Products API (e2e)', () => {
       .get(`${PRODUCTS}/${id}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body).toMatchObject({ id, name: 'Keyboard', price: 199.99, stockOnHand: 2 });
+        expect(res.body).toMatchObject({
+          id,
+          name: 'Keyboard',
+          description: DEFAULT_DESCRIPTION,
+          price: 199.99,
+          stockOnHand: 2,
+        });
       });
   });
 
@@ -105,7 +133,7 @@ describe('Products API (e2e)', () => {
   it('PATCH /api/v1/products/:id updates name and isActive', async () => {
     const createRes = await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Old Name', price: 10, stockOnHand: 1 });
+      .send(productBody({ name: 'Old Name', price: 10, stockOnHand: 1 }));
 
     const id = createRes.body.id as string;
 
@@ -119,10 +147,27 @@ describe('Products API (e2e)', () => {
       });
   });
 
+  it('PATCH /api/v1/products/:id updates description only', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post(PRODUCTS)
+      .send(productBody({ name: 'Described', price: 10, stockOnHand: 1 }));
+
+    const id = createRes.body.id as string;
+
+    return request(app.getHttpServer())
+      .patch(`${PRODUCTS}/${id}`)
+      .send({ description: 'Nova descrição do produto' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.description).toBe('Nova descrição do produto');
+        expect(res.body.name).toBe('Described');
+      });
+  });
+
   it('PATCH /api/v1/products/:id/price updates the price', async () => {
     const createRes = await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Priced', price: 10, stockOnHand: 1 });
+      .send(productBody({ name: 'Priced', price: 10, stockOnHand: 1 }));
 
     const id = createRes.body.id as string;
 
@@ -138,7 +183,7 @@ describe('Products API (e2e)', () => {
   it('PATCH /api/v1/products/:id/amount updates the stock on hand', async () => {
     const createRes = await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'Counted', price: 1, stockOnHand: 0 });
+      .send(productBody({ name: 'Counted', price: 1, stockOnHand: 0 }));
 
     const id = createRes.body.id as string;
 
@@ -155,7 +200,7 @@ describe('Products API (e2e)', () => {
   it('DELETE /api/v1/products/:id removes the product', async () => {
     const createRes = await request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: 'ToDelete', price: 1, stockOnHand: 1 });
+      .send(productBody({ name: 'ToDelete', price: 1, stockOnHand: 1 }));
 
     const id = createRes.body.id as string;
 

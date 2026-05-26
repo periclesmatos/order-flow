@@ -1,5 +1,6 @@
 import {
   InsufficientStockError,
+  ProductEmptyDescriptionError,
   ProductEmptyNameError,
   ProductNegativeAmountError,
   ProductNegativePriceError,
@@ -9,6 +10,7 @@ import { Money } from './money.value-object.js';
 export interface ProductProps {
   id: string;
   name: string;
+  description: string;
   price: Money;
   stockOnHand: number;
   reservedQuantity: number;
@@ -23,6 +25,7 @@ export type ProductPrimitives = Omit<ProductProps, 'price'> & {
 
 export type CreateProductProps = {
   name: string;
+  description: string;
   price: Money;
   stockOnHand: number;
 };
@@ -60,6 +63,10 @@ export class Product {
     return this._props.name;
   }
 
+  get description(): string {
+    return this._props.description;
+  }
+
   get price(): Money {
     return this._props.price;
   }
@@ -91,6 +98,12 @@ export class Product {
   set name(value: string) {
     if (!value?.trim()) throw new ProductEmptyNameError();
     this._props.name = value.trim();
+    this._props.updatedAt = new Date();
+  }
+
+  set description(value: string) {
+    if (!value?.trim()) throw new ProductEmptyDescriptionError();
+    this._props.description = value.trim();
     this._props.updatedAt = new Date();
   }
 

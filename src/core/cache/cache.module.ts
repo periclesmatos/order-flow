@@ -1,20 +1,15 @@
 import { Global, Module } from '@nestjs/common';
-import { CacheModule } from '@nestjs/cache-manager';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import KeyvRedis from '@keyv/redis';
+import { ConfigModule } from '@nestjs/config';
+import { RedisCacheService } from './redis-cache.service.js';
+import { CACHE_SERVICE } from './cache.token.js';
 
 @Global()
 @Module({
-  imports: [
-    CacheModule.registerAsync({
-      isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        stores: [new KeyvRedis(config.get<string>('REDIS_URL', 'redis://localhost:6379'))],
-      }),
-    }),
+  imports: [ConfigModule],
+  providers: [
+    RedisCacheService,
+    { provide: CACHE_SERVICE, useExisting: RedisCacheService },
   ],
-  exports: [CacheModule],
+  exports: [RedisCacheService, CACHE_SERVICE],
 })
 export class AppCacheModule {}

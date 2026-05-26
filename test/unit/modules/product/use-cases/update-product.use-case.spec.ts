@@ -2,17 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UpdateProductUseCase } from '@src/modules/product/application/use-cases/update-product.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
-import { Product } from '@src/modules/product/domain/entities/product.entity';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductAlreadyExistsError, ProductNotFoundError } from '@src/modules/product/domain/errors/product.errors';
 import { cacheManagerProvider, loggerProvider, provideProductUseCaseWithCache } from '@test/helpers/testing-module';
+import { createTestProduct, DEFAULT_PRODUCT_DESCRIPTION } from '../product-test.helpers';
 
 describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let repository: jest.Mocked<IProductRepository>;
 
   const makeProduct = (name = 'Original') =>
-    Product.create({ name, price: Money.fromCents(500), stockOnHand: 3 });
+    createTestProduct({ name, price: Money.fromCents(500), stockOnHand: 3 });
 
   beforeEach(async () => {
     repository = {
@@ -99,5 +99,26 @@ describe('UpdateProductUseCase', () => {
     expect(result.name).toBe('New');
     expect(result.price.toFloat()).toBe(5);
     expect(result.stockOnHand).toBe(3);
+  });
+
+  it('updates description only', async () => {
+    const p = makeProduct('Old');
+    repository.findById.mockResolvedValue(p);
+    repository.update.mockImplementation(async (_, prod) => prod);
+
+    const result = await useCase.execute(p.id, { description: 'Updated description' });
+
+    expect(result.description).toBe('Updated description');
+    expect(repository.findByName).not.toHaveBeenCalled();
+  });
+
+  it('does not update description when value is unchanged', async () => {
+    const p = makeProduct('Old');
+    repository.findById.mockResolvedValue(p);
+    repository.update.mockImplementation(async (_, prod) => prod);
+
+    await useCase.execute(p.id, { description: DEFAULT_PRODUCT_DESCRIPTION });
+
+    expect(repository.update).toHaveBeenCalledTimes(1);
   });
 });

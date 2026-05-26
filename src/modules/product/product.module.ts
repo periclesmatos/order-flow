@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
+import { CACHE_SERVICE } from '../../core/cache/cache.token.js';
+import type { ICacheService } from '../../core/cache/cache.interface.js';
 import { ProductController } from './presentation/controllers/product.controller.js';
 import { CreateProductUseCase } from './application/use-cases/create-product.use-case.js';
 import { ListProductsUseCase } from './application/use-cases/list-products.use-case.js';
@@ -35,32 +35,32 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: GetProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-      useFactory: (logger: ILogger, repo: any, cache: Cache) =>
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
         new GetProductUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-      useFactory: (logger: ILogger, repo: any, cache: Cache) =>
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
         new UpdateProductUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductPriceUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-      useFactory: (logger: ILogger, repo: any, cache: Cache) =>
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
         new UpdateProductPriceUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductAmountUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-      useFactory: (logger: ILogger, repo: any, cache: Cache) =>
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
         new UpdateProductAmountUseCase(logger, repo, cache),
     },
     {
       provide: DeleteProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-      useFactory: (logger: ILogger, repo: any, cache: Cache) =>
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
         new DeleteProductUseCase(logger, repo, cache),
     },
     { provide: PRODUCT_REPOSITORY, useClass: ProductRepository },

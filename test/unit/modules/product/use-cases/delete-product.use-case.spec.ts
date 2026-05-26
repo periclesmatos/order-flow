@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DeleteProductUseCase } from '@src/modules/product/application/use-cases/delete-product.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
-import { Product } from '@src/modules/product/domain/entities/product.entity';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductNotFoundError } from '@src/modules/product/domain/errors/product.errors';
 import { cacheManagerProvider, loggerProvider, provideProductUseCaseWithCache } from '@test/helpers/testing-module';
+import { createTestProduct } from '../product-test.helpers';
 
 describe('DeleteProductUseCase', () => {
   let useCase: DeleteProductUseCase;
@@ -34,7 +34,7 @@ describe('DeleteProductUseCase', () => {
   });
 
   it('deletes product when found', async () => {
-    const p = Product.create({ name: 'Temp', price: Money.fromCents(100), stockOnHand: 1 });
+    const p = createTestProduct({ name: 'Temp', price: Money.fromCents(100), stockOnHand: 1 });
     repository.findById.mockResolvedValue(p);
     repository.delete.mockResolvedValue(undefined);
 

@@ -2,25 +2,34 @@ import { CreateProductSchema } from '@src/modules/product/application/dtos/creat
 import { expectParseMessages } from '@test/unit/helpers/zod-schema.helpers';
 
 describe('CreateProductSchema', () => {
-  const valid = { name: 'Book', price: 9.99, stockOnHand: 2 };
+  const valid = { name: 'Book', description: 'Livro de ficção', price: 9.99, stockOnHand: 2 };
 
-  it('accepts valid payload and trims name', () => {
-    const r = CreateProductSchema.safeParse({ name: '  Book  ', price: 9.99, stockOnHand: 2 });
+  it('accepts valid payload and trims name and description', () => {
+    const r = CreateProductSchema.safeParse({
+      name: '  Book  ',
+      description: '  Livro de ficção  ',
+      price: 9.99,
+      stockOnHand: 2,
+    });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data).toEqual({ name: 'Book', price: 9.99, stockOnHand: 2 });
+      expect(r.data).toEqual({ name: 'Book', description: 'Livro de ficção', price: 9.99, stockOnHand: 2 });
     }
   });
 
   describe('name', () => {
     it('rejects when missing', () => {
-      expectParseMessages(CreateProductSchema, { price: 1, stockOnHand: 0 }, 'Nome é obrigatório');
+      expectParseMessages(
+        CreateProductSchema,
+        { description: 'X', price: 1, stockOnHand: 0 },
+        'Nome é obrigatório',
+      );
     });
 
     it('rejects when not a string', () => {
       expectParseMessages(
         CreateProductSchema,
-        { name: 123, price: 1, stockOnHand: 0 },
+        { name: 123, description: 'Desc', price: 1, stockOnHand: 0 },
         'Nome deve ser texto',
       );
     });
@@ -38,15 +47,37 @@ describe('CreateProductSchema', () => {
     });
   });
 
+  describe('description', () => {
+    it('rejects when missing', () => {
+      expectParseMessages(CreateProductSchema, { name: 'X', price: 1, stockOnHand: 0 }, 'Descrição é obrigatória');
+    });
+
+    it('rejects empty string', () => {
+      expectParseMessages(CreateProductSchema, { ...valid, description: '' }, 'Descrição é obrigatória');
+    });
+
+    it('rejects more than 255 characters', () => {
+      expectParseMessages(
+        CreateProductSchema,
+        { ...valid, description: 'x'.repeat(256) },
+        'Descrição deve ter no máximo 255 caracteres',
+      );
+    });
+  });
+
   describe('price', () => {
     it('rejects when missing', () => {
-      expectParseMessages(CreateProductSchema, { name: 'X', stockOnHand: 0 }, 'Preço é obrigatório');
+      expectParseMessages(
+        CreateProductSchema,
+        { name: 'X', description: 'Desc', stockOnHand: 0 },
+        'Preço é obrigatório',
+      );
     });
 
     it('rejects when not a number', () => {
       expectParseMessages(
         CreateProductSchema,
-        { name: 'X', price: '9.99', stockOnHand: 0 },
+        { name: 'X', description: 'Desc', price: '9.99', stockOnHand: 0 },
         'Preço deve ser um número válido',
       );
     });
@@ -70,13 +101,17 @@ describe('CreateProductSchema', () => {
 
   describe('stockOnHand', () => {
     it('rejects when missing', () => {
-      expectParseMessages(CreateProductSchema, { name: 'X', price: 1 }, 'Quantidade é obrigatória');
+      expectParseMessages(
+        CreateProductSchema,
+        { name: 'X', description: 'Desc', price: 1 },
+        'Quantidade é obrigatória',
+      );
     });
 
     it('rejects when not a number', () => {
       expectParseMessages(
         CreateProductSchema,
-        { name: 'X', price: 1, stockOnHand: '2' },
+        { name: 'X', description: 'Desc', price: 1, stockOnHand: '2' },
         'Quantidade deve ser um número válido',
       );
     });

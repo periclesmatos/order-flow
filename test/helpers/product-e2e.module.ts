@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { CACHE_SERVICE } from '@src/core/cache/cache.token';
+import type { ICacheService } from '@src/core/cache/cache.interface';
 import { ProductController } from '@src/modules/product/presentation/controllers/product.controller';
 import { CreateProductUseCase } from '@src/modules/product/application/use-cases/create-product.use-case';
 import { ListProductsUseCase } from '@src/modules/product/application/use-cases/list-products.use-case';
@@ -34,34 +36,38 @@ const LOGGER_TOKEN = 'ILogger';
         new ListProductsUseCase(logger, repo),
     },
     {
+      provide: CACHE_SERVICE,
+      useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } satisfies ICacheService,
+    },
+    {
       provide: GetProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new GetProductUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
+        new GetProductUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new UpdateProductUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
+        new UpdateProductUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductPriceUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new UpdateProductPriceUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
+        new UpdateProductPriceUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductAmountUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new UpdateProductAmountUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
+        new UpdateProductAmountUseCase(logger, repo, cache),
     },
     {
       provide: DeleteProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new DeleteProductUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
+        new DeleteProductUseCase(logger, repo, cache),
     },
     { provide: PRODUCT_REPOSITORY, useClass: InMemoryProductRepository },
   ],

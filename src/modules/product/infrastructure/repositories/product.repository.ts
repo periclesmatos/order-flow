@@ -13,6 +13,7 @@ import type {
 function toDomain(row: {
   id: string;
   name: string;
+  description: string;
   price: number;
   stockOnHand: number;
   reservedQuantity: number;
@@ -23,6 +24,7 @@ function toDomain(row: {
   return Product.restore({
     id: row.id,
     name: row.name,
+    description: row.description,
     price: row.price,
     stockOnHand: row.stockOnHand,
     reservedQuantity: row.reservedQuantity,
@@ -49,6 +51,7 @@ export class ProductRepository implements IProductRepository {
       data: {
         id: product.id,
         name: product.name,
+        description: product.description,
         price: product.price.cents,
         stockOnHand: product.stockOnHand,
         reservedQuantity: product.reservedQuantity,
@@ -108,6 +111,7 @@ export class ProductRepository implements IProductRepository {
       where: { id },
       data: {
         name: product.name,
+        description: product.description,
         price: product.price.cents,
         stockOnHand: product.stockOnHand,
         reservedQuantity: product.reservedQuantity,

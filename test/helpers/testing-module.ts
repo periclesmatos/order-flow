@@ -1,6 +1,6 @@
 import { type DynamicModule, type Provider } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
+import { CACHE_SERVICE } from '@src/core/cache/cache.token';
+import type { ICacheService } from '@src/core/cache/cache.interface';
 import { ClsPluginTransactional, NoOpTransactionalAdapter } from '@nestjs-cls/transactional';
 import { ClsModule } from 'nestjs-cls';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
@@ -34,12 +34,12 @@ export function provideProductUseCase<T>(
 }
 
 export function provideProductUseCaseWithCache<T>(
-  UseCaseClass: new (logger: ILogger, repository: IProductRepository, cache: Cache) => T,
+  UseCaseClass: new (logger: ILogger, repository: IProductRepository, cache: ICacheService) => T,
 ): Provider {
   return {
     provide: UseCaseClass,
-    inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_MANAGER],
-    useFactory: (logger: ILogger, repository: IProductRepository, cache: Cache) =>
+    inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+    useFactory: (logger: ILogger, repository: IProductRepository, cache: ICacheService) =>
       new UseCaseClass(logger, repository, cache),
   };
 }
@@ -98,7 +98,7 @@ export function loggerProvider(): Provider {
 
 export function cacheManagerProvider(): Provider {
   return {
-    provide: CACHE_MANAGER,
-    useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() },
+    provide: CACHE_SERVICE,
+    useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } satisfies ICacheService,
   };
 }

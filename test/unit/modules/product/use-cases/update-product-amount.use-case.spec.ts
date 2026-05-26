@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UpdateProductAmountUseCase } from '@src/modules/product/application/use-cases/update-product-amount.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
-import { Product } from '@src/modules/product/domain/entities/product.entity';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductNotFoundError } from '@src/modules/product/domain/errors/product.errors';
 import { cacheManagerProvider, loggerProvider, provideProductUseCaseWithCache } from '@test/helpers/testing-module';
+import { createTestProduct } from '../product-test.helpers';
 
 describe('UpdateProductAmountUseCase', () => {
   let useCase: UpdateProductAmountUseCase;
@@ -42,7 +42,7 @@ describe('UpdateProductAmountUseCase', () => {
   });
 
   it('updates amount and returns product', async () => {
-    const p = Product.create({ name: 'Box', price: Money.fromCents(200), stockOnHand: 0 });
+    const p = createTestProduct({ name: 'Box', price: Money.fromCents(200), stockOnHand: 0 });
     repository.findById.mockResolvedValue(p);
     repository.update.mockImplementation(async (_, prod) => prod);
 

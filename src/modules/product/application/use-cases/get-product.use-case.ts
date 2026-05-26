@@ -1,10 +1,10 @@
 import { Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CACHE_SERVICE } from '../../../../core/cache/cache.token.js';
 import { Product } from '../../domain/entities/product.entity.js';
 import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
 import { ProductNotFoundError } from '../../domain/errors/product.errors.js';
 import { productCacheKey, PRODUCT_CACHE_TTL_MS } from '../cache/product.cache-keys.js';
-import type { Cache } from 'cache-manager';
+import type { ICacheService } from '../../../../core/cache/cache.interface.js';
 import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
 import type { ProductPrimitives } from '../../domain/entities/product.entity.js';
 import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
@@ -14,8 +14,8 @@ export class GetProductUseCase {
     private readonly logger: ILogger,
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
-    @Inject(CACHE_MANAGER)
-    private readonly cache: Cache,
+    @Inject(CACHE_SERVICE)
+    private readonly cache: ICacheService,
   ) {}
 
   async execute(id: string): Promise<Product> {

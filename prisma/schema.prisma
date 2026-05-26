@@ -42,6 +42,7 @@ model Address {
 model Product {
   id               String   @id @unique @default(uuid())
   name             String
+  description      String   @default("")
   price            Int
   stockOnHand      Int
   reservedQuantity Int      @default(0)
@@ -50,6 +51,15 @@ model Product {
   updatedAt        DateTime @updatedAt
 
   @@map("products")
+}
+
+model ProductCategory {
+  id        String   @id @unique @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("product_categories")
 }
 
 model Order {

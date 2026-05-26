@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
+import { CACHE_SERVICE } from '../../../../core/cache/cache.token.js';
+import type { ICacheService } from '../../../../core/cache/cache.interface.js';
 import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
 import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
 import type { UpdateProductDto } from '../dtos/update-product.dto.js';
@@ -14,8 +14,8 @@ export class UpdateProductUseCase {
     private readonly logger: ILogger,
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
-    @Inject(CACHE_MANAGER)
-    private readonly cache: Cache,
+    @Inject(CACHE_SERVICE)
+    private readonly cache: ICacheService,
   ) {}
 
   async execute(id: string, dto: UpdateProductDto): Promise<Product> {
@@ -26,6 +26,10 @@ export class UpdateProductUseCase {
       const existing = await this.productRepository.findByName(dto.name);
       if (existing) throw new ProductAlreadyExistsError(dto.name);
       product.name = dto.name.trim();
+    }
+
+    if (dto.description !== undefined && dto.description !== product.description) {
+      product.description = dto.description.trim();
     }
 
     if (dto.isActive !== undefined) {

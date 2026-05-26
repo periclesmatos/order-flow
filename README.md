@@ -24,7 +24,7 @@ Principais capacidades atuais:
 
 - CRUD de clientes com validação de e-mail e telefone (`libphonenumber-js`)
 - Gestão de endereços por cliente (criar, atualizar, remover, definir padrão)
-- CRUD de produtos com preço em centavos, estoque e quantidade reservada
+- CRUD de produtos com nome, descrição, preço em centavos, estoque e quantidade reservada
 - Cache Redis em consulta de produto por ID
 - Health checks (liveness e readiness com Prisma)
 - Documentação OpenAPI em `/api/docs`
@@ -37,7 +37,7 @@ Principais capacidades atuais:
 | Framework | NestJS 11 |
 | Linguagem | TypeScript 5.7 (ESM) |
 | ORM | Prisma 7 + PostgreSQL 16 |
-| Cache | `@nestjs/cache-manager` + Redis 7 (`@keyv/redis`) |
+| Cache | Redis 7 (`ioredis`) |
 | Validação HTTP | Zod + `ZodValidationPipe` |
 | Logs | Pino (`nestjs-pino`) |
 | API docs | Swagger (`@nestjs/swagger`) |
@@ -98,7 +98,7 @@ Entidades persistidas:
 
 - **Customer** — nome, e-mail único, telefone, `isActive`
 - **Address** — vinculado ao cliente, `isDefault`, cascade on delete
-- **Product** — nome, `price` (inteiro, centavos), `stockOnHand`, `reservedQuantity`, `isActive`
+- **Product** — nome, `description` (até 255 caracteres na API), `price` (inteiro, centavos), `stockOnHand`, `reservedQuantity`, `isActive`
 - **Order**, **OrderItem**, **OrderDeliveryAddress** — schema e enum `OrderStatus` existem; API de pedidos `[planejado]`
 
 ## Pré-requisitos
@@ -240,8 +240,7 @@ Há cobertura unitária ampla em customer e product; e2e inclui `products.e2e-sp
 Itens alinhados a `projeto.md` e lacunas do código:
 
 1. **[planejado] Order Service** — implementar `OrderModule` (use cases, repositórios, controller) sobre modelos `Order`, `OrderItem` e `OrderDeliveryAddress`.
-2. **[planejado] Descrição no produto** — campo e API de produto ainda não existem no schema.
-3. **[planejado] Categoria de produto** — nova entidade e relacionamento com `Product`.
-4. **[planejado] Autenticação e autorização** — camada de segurança de alto nível ainda não presente.
-5. **[planejado] CI/CD** — não há workflows em `.github/workflows/` hoje.
+2. **[planejado] Categoria de produto** — nova entidade e relacionamento com `Product`.
+3. **[planejado] Autenticação e autorização** — camada de segurança de alto nível ainda não presente.
+4. **[planejado] CI/CD** — não há workflows em `.github/workflows/` hoje.
 

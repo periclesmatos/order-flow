@@ -1,266 +1,198 @@
 # Order Flow
 
-API REST para gestão de clientes, produtos e pedidos, com arquitetura modular em camadas (domínio, aplicação, infraestrutura e apresentação).
+API REST para gestão de clientes, produtos e pedidos, construída com **Clean Architecture** modular em NestJS.
 
-[![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-7.8-2D3748)](https://www.prisma.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D)](https://redis.io/)
-[![Zod](https://img.shields.io/badge/Zod-4-3E67B1)](https://zod.dev/)
-[![Swagger](https://img.shields.io/badge/Swagger-11.4-brightgreen)](https://swagger.io/)
-[![Jest](https://img.shields.io/badge/Jest-30-C21325)](https://jestjs.io/)
-[![Supertest](https://img.shields.io/badge/Supertest-7-lightgrey)](https://www.npmjs.com/package/supertest)
-[![Pino](https://img.shields.io/badge/Pino-4.6-black)](https://getpino.io/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-UNLICENSED-lightgrey)](#licença)
+[![Jest](https://img.shields.io/badge/tests-Jest%2030-C21325)](https://jestjs.io/)
 
 ## Visão geral
 
-O **Order Flow** é um backend em NestJS que expõe recursos versionados em `/api/v1`. Hoje o foco está em **Customer** e **Product**, com modelo de dados de **Order** já definido no Prisma, mas sem casos de uso nem rotas de pedidos implementados.
+Backend que expõe recursos versionados em `/api/v1`, documentados via Swagger em `/api/docs`.
 
-Principais capacidades atuais:
+O código é organizado em camadas (Clean Architecture): a **regra de negócio fica isolada** de frameworks e banco de dados. Na prática, isso significa que trocar Prisma por outro ORM, ou Redis por outro cache, não toca o núcleo do domínio.
 
-- CRUD de clientes com validação de e-mail e telefone (`libphonenumber-js`)
-- Gestão de endereços por cliente (criar, atualizar, remover, definir padrão)
-- CRUD de produtos com nome, descrição, preço em centavos, estoque e quantidade reservada
-- Cache Redis em consulta de produto por ID
-- Cache Redis na listagem de produtos (com invalidação por eventos)
-- Health checks (liveness e readiness com Prisma)
-- Documentação OpenAPI em `/api/docs`
+**Funcionalidades atuais:**
+
+- CRUD de **clientes** com validação de e-mail e telefone (`libphonenumber-js`)
+- **Endereços** por cliente (criar, atualizar, remover, definir padrão)
+- CRUD de **produtos** com controle de preço, estoque e quantidade reservada
+- **Cache Redis** em leitura de produtos, com invalidação automática por eventos
+- **Health checks** (liveness e readiness com checagem do banco)
+
+> **Pedidos (`Order`)** já têm modelo de dados definido no Prisma; os casos de uso e rotas estão no [roadmap](#roadmap).
 
 ## Stack
 
 | Camada | Tecnologia |
 |--------|------------|
-| Runtime | Node.js 20+ |
-| Framework | NestJS 11 |
-| Linguagem | TypeScript 5.7 (CommonJS) |
-| ORM | Prisma 7 + PostgreSQL 16 |
+| Framework | NestJS 11 (TypeScript, CommonJS) |
+| Banco / ORM | PostgreSQL 16 + Prisma 7 |
 | Cache | Redis 7 (`ioredis`) |
-| Validação HTTP | Zod + `ZodValidationPipe` |
-| Logs | Pino (`nestjs-pino`) |
-| API docs | Swagger (`@nestjs/swagger`) |
-| Segurança HTTP | Helmet, CORS configurável, rate limit (`@nestjs/throttler`) |
-| Transações | `nestjs-cls` + `@nestjs-cls/transactional` (adapter Prisma) |
+| Validação | Zod (pipe por endpoint) |
+| Logs | Pino (logs estruturados) |
+| Docs | Swagger / OpenAPI |
+| Segurança HTTP | Helmet, CORS, rate limit (`@nestjs/throttler`) |
+| Transações | `nestjs-cls` + adapter Prisma |
 | Testes | Jest 30 + Supertest (e2e) |
 
 ## Arquitetura
 
-Cada módulo de negócio segue separação por responsabilidade:
+Cada módulo de negócio segue a mesma separação por responsabilidade:
 
 ```
-presentation/   → controllers, presenters, decorators OpenAPI
-application/    → use cases, DTOs (Zod), cache keys
-domain/         → entidades, value objects, erros de domínio, interfaces de repositório
-infrastructure/ → implementações Prisma dos repositórios
+presentation/   → controllers, presenters, docs OpenAPI
+application/    → use cases, DTOs (Zod), cache keys, event handlers
+domain/         → entidades, value objects, erros, interfaces de repositório
+infrastructure/ → implementação Prisma dos repositórios
 ```
+
+**Regra de ouro:** `domain` não conhece nenhuma outra camada. Infra e apresentação dependem do domínio através de interfaces — nunca o contrário.
 
 Fluxo de uma requisição:
 
 ```
 HTTP → Controller → Use Case → Repository (Prisma) → PostgreSQL
-                      ↓
-                 Domain (entidades / regras)
-                      ↓
-                 Cache (Redis) — Get Product e List Products
+                       │
+                       ├─→ Domain (entidades + regras de negócio)
+                       └─→ Cache (Redis) em leitura de produtos
 ```
 
-Módulos registrados em `AppModule`:
-
-| Módulo | Estado |
-|--------|--------|
-| `CustomerModule` | Implementado (API + domínio + Prisma) |
-| `ProductModule` | Implementado (API + domínio + Prisma + cache) |
-| `OrderModule` | Registrado, módulo vazio `[planejado]` |
-| `CoreModule` | Prisma global, health, cache, transações CLS |
+Estrutura de pastas:
 
 ```
 order-flow/
-├── prisma/                 # schema e migrations
-├── src/
-│   ├── main.ts
-│   ├── app.module.ts
-│   ├── common/             # pipes, filters, interceptors, middleware
-│   ├── core/               # prisma, cache, health
-│   ├── modules/
-│   │   ├── customer/
-│   │   ├── product/
-│   │   └── order/          # [planejado]
-│   ├── shared/             # bootstrap, logger, interfaces
-│   └── generated/prisma/   # client gerado
-└── test/                   # unit + e2e
+├── prisma/                # schema e migrations
+└── src/
+    ├── common/            # pipes, filters, interceptors (cross-cutting HTTP)
+    ├── core/              # prisma, cache, health, transações
+    ├── shared/            # bootstrap, logger, tipos
+    └── modules/
+        ├── customer/      # ✅ implementado
+        ├── product/       # ✅ implementado (+ cache)
+        └── order/         # 🚧 planejado
 ```
 
-## Modelo de dados (Prisma)
+## Modelo de dados
 
-Entidades persistidas:
-
-- **Customer** — nome, e-mail único, telefone, `isActive`
-- **Address** — vinculado ao cliente, `isDefault`, cascade on delete
-- **Product** — nome, `description` (até 255 caracteres na API), `price` (inteiro, centavos), `stockOnHand`, `reservedQuantity`, `isActive`
-- **Order**, **OrderItem**, **OrderDeliveryAddress** — schema e enum `OrderStatus` existem; API de pedidos `[planejado]`
-
-## Pré-requisitos
-
-- Node.js 20 ou superior
-- npm
-- Docker e Docker Compose (para Postgres e Redis locais)
+| Entidade | Descrição |
+|----------|-----------|
+| **Customer** | nome, e-mail único, telefone, `isActive` |
+| **Address** | vinculado ao cliente, `isDefault`, remoção em cascata |
+| **Product** | nome, descrição, `price` (centavos), `stockOnHand`, `reservedQuantity` |
+| **Order** *(planejado)** | `Order`, `OrderItem`, `OrderDeliveryAddress` + enum `OrderStatus` |
 
 ## Como rodar
 
-### 1. Infraestrutura
+**Pré-requisitos:** Node.js 20+, npm e Docker.
 
 ```bash
+# 1. Sobe PostgreSQL (5432) e Redis (6379)
 docker compose up -d
-```
 
-Sobe PostgreSQL (`5432`) e Redis (`6379`) conforme `docker-compose.yml`.
-
-### 2. Variáveis de ambiente
-
-```bash
+# 2. Variáveis de ambiente
 cp .env.example .env
-```
 
-### 3. Banco e client Prisma
-
-```bash
+# 3. Dependências, client Prisma e migrations
 npm install
 npm run prisma:generate
 npm run prisma:migrate
-```
 
-### 4. API
-
-```bash
+# 4. Sobe a API (porta 3000 por padrão)
 npm run start:dev
 ```
 
-A aplicação sobe na porta definida em `PORT` (padrão `3000`).
-
-### Endpoints úteis
+Endpoints úteis após subir:
 
 | Recurso | URL |
 |---------|-----|
 | Swagger UI | http://localhost:3000/api/docs |
-| OpenAPI JSON | http://localhost:3000/api/docs-json |
 | Liveness | http://localhost:3000/health |
-| Readiness (DB) | http://localhost:3000/health/ready |
+| Readiness (banco) | http://localhost:3000/health/ready |
 
-Prefixo global da API: `/api/v1` (health e docs ficam fora do prefixo).
+> A API fica sob o prefixo `/api/v1`; `health` e `docs` ficam fora dele.
 
-### Recursos REST (resumo)
+## Endpoints
 
-**Produtos** (`/api/v1/products`)
+**Produtos** — `/api/v1/products`
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | POST | `/` | Criar produto |
-| GET | `/` | Listar (paginação, filtros, ordenação) |
-| GET | `/:id` | Buscar por ID (com cache) |
+| GET | `/` | Listar (paginação, filtros, ordenação — *com cache*) |
+| GET | `/:id` | Buscar por ID (*com cache*) |
 | PATCH | `/:id` | Atualizar dados gerais |
 | PATCH | `/:id/price` | Atualizar preço |
 | PATCH | `/:id/amount` | Atualizar estoque |
 | DELETE | `/:id` | Remover |
 
-**Clientes** (`/api/v1/customers`)
+**Clientes** — `/api/v1/customers`
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | POST | `/` | Criar cliente |
-| GET | `/` | Listar (paginado) |
-| GET | `/:id` | Buscar por ID |
+| GET | `/` · `/:id` | Listar (paginado) · buscar por ID |
 | PATCH | `/:id` | Atualizar |
 | DELETE | `/:id` | Remover |
 | POST | `/:customerId/addresses` | Criar endereço |
 | PATCH | `/:customerId/addresses/:addressId` | Atualizar endereço |
-| PATCH | `/:customerId/addresses/:addressId/default` | Definir endereço padrão |
+| PATCH | `/:customerId/addresses/:addressId/default` | Definir como padrão |
 | DELETE | `/:customerId/addresses/:addressId` | Remover endereço |
 
-Detalhes de payloads e respostas: Swagger.
+Payloads e respostas completos no Swagger.
 
 ## Variáveis de ambiente
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `NODE_ENV` | Ambiente de execução | `development` |
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
 | `PORT` | Porta HTTP | `3000` |
-| `DATABASE_URL` | Connection string PostgreSQL | `postgresql://postgres:postgres@localhost:5432/order_flow` |
-| `REDIS_URL` | URL do Redis para cache | `redis://localhost:6379` |
-| `PRODUCT_CACHE_TTL_MS` | TTL do cache de produto (ms) | `300000` (opcional; padrão 5 min) |
-| `PRODUCT_LIST_CACHE_TTL_MS` | TTL do cache de listagem de produtos (ms) | `120000` (opcional; padrão 2 min) |
-| `LOG_LEVEL` | Nível do Pino | `debug` |
-| `CORS_ORIGIN` | Origens permitidas (vírgula) | omitir = todas em dev |
-
-## Scripts npm
-
-| Script | Uso |
-|--------|-----|
-| `npm run start:dev` | Desenvolvimento com watch |
-| `npm run build` | Build de produção |
-| `npm run start:prod` | Executar `dist/main` |
-| `npm run test` | Testes unitários |
-| `npm run test:e2e` | Testes e2e |
-| `npm run test:cov` | Cobertura |
-| `npm run typecheck` | Verificação TypeScript |
-| `npm run lint` | ESLint |
-| `npm run prisma:generate` | Gerar client Prisma (CJS) |
-| `npm run prisma:migrate` | Migrations em dev |
-| `npm run prisma:migrate:deploy` | Migrations em produção |
-| `npm run prisma:studio` | UI do Prisma |
+| `DATABASE_URL` | Connection string PostgreSQL | — |
+| `REDIS_URL` | URL do Redis | — |
+| `PRODUCT_CACHE_TTL_MS` | TTL do cache de produto | `300000` (5 min) |
+| `PRODUCT_LIST_CACHE_TTL_MS` | TTL do cache de listagem | `120000` (2 min) |
+| `LOG_LEVEL` | Nível de log (Pino) | `info` |
+| `CORS_ORIGIN` | Origens permitidas (separadas por vírgula) | todas em dev |
 
 ## Testes
 
 ```bash
-# unitários
-npm run test
-
-# e2e (produtos e health)
-npm run test:e2e
+npm run test       # unitários
+npm run test:e2e   # end-to-end (produtos e health)
+npm run test:cov   # cobertura
 ```
 
-Há cobertura unitária ampla em customer e product; e2e inclui `products.e2e-spec.ts` e `health.e2e-spec.ts`.
+Há cobertura unitária ampla em `customer` e `product`. Antes de concluir uma mudança: `npm run typecheck && npm test`.
 
 ## Decisões técnicas
 
-- **Arquitetura em camadas por módulo** — isola regras de negócio (entidades, VOs, erros `DomainError`) da infraestrutura Nest/Prisma e facilita testes com repositórios in-memory.
-- **Use cases explícitos** — cada operação de aplicação é uma classe injetável; controllers permanecem finos (validação + apresentação).
-- **Zod nos DTOs** — validação declarativa reutilizável em pipe global por endpoint, alinhada ao TypeScript.
-- **Prisma com client em `src/generated/prisma`** — gerado em CommonJS (`moduleFormat = "cjs"`), sem patch pós-generate.
-- **Preço em centavos (`Int`)** — evita ponto flutuante; `Money` no domínio encapsula regras de valor.
-- **Cache em `GetProduct` e `ListProducts`** — reduz carga em leitura frequente; TTL configurável; listagem cacheada por combinação de paginação/filtros/ordenação e invalidada por eventos em qualquer mutação de produto.
-- **Transações via CLS + Prisma adapter** — propaga contexto transacional sem acoplar use cases ao `PrismaService` diretamente em todos os fluxos.
-- **Observabilidade com Pino** — logs estruturados; `LoggingInterceptor` e `AllExceptionsFilter` com `correlationId` (request id).
-- **Throttler global** — 100 req/min por padrão; health checks isentos (`@SkipThrottle`).
-- **Helmet + CORS + shutdown hooks** — endurecimento HTTP e encerramento gracioso em produção.
-- **Swagger na raiz `/api/docs`** — contrato vivo para integração frontend ou QA.
+Cada decisão abaixo resolve um problema concreto:
 
-## Cache de produtos
+- **Camadas isoladas por módulo** — a regra de negócio (entidades, value objects, erros) não depende de NestJS nem Prisma. Resultado: testes rápidos com repositórios in-memory e liberdade para trocar infraestrutura.
 
-### Chaves e TTL
+- **Use cases explícitos** — cada operação é uma classe com um método `execute()`. Os controllers ficam finos (só validam e respondem), e a intenção de cada fluxo fica fácil de ler.
 
-- `product:{id}`: cache do `GET /products/:id` (TTL via `PRODUCT_CACHE_TTL_MS`)
-- `products:list:{page}:{limit}:{sortBy}:{order}:{name}:{isActive}`: cache do `GET /products` (TTL via `PRODUCT_LIST_CACHE_TTL_MS`)
+- **Zod nos DTOs** — a validação é declarativa e vira tipo TypeScript automaticamente. Uma única fonte de verdade para "o que é um payload válido".
 
-### Invalidação por eventos (consistência total)
+- **Dinheiro em centavos (`Int`)** — preço nunca é float. Um value object `Money` encapsula as regras e elimina erros de arredondamento.
 
-Qualquer mutação de produto (create/update/update-price/update-amount/delete) emite o evento `product.mutated`.
+- **Cache com invalidação por eventos** — leituras de produto vêm do Redis; qualquer mutação emite um evento que limpa as chaves afetadas. Leitura rápida *sem* servir dados obsoletos.
 
-O handler invalida:
+- **Transações via CLS** — o contexto transacional é propagado automaticamente, sem acoplar os use cases ao `PrismaService`.
 
-- a chave do produto (`product:{id}`)
-- todas as variações de listagem (`products:list:*`)
+- **Erros de domínio** — exceções estendem `DomainError` e são lançadas no núcleo; um filtro global as traduz para a resposta HTTP correta. As camadas internas não conhecem HTTP.
 
-Isso garante que o cache de listagem não sirva resultados obsoletos após mudanças.
+- **Observabilidade e endurecimento** — logs estruturados (Pino) com `correlationId` por requisição, Helmet, CORS configurável e rate limit global.
 
 ## Roadmap
 
-Itens alinhados a `projeto.md` e lacunas do código:
+- 🚧 **Order Service** — implementar `OrderModule` (use cases, repositórios, rotas) sobre os modelos já definidos
+- 🚧 **Categoria de produto** — nova entidade com relacionamento a `Product`
+- 🚧 **Autenticação e autorização**
+- 🚧 **CI/CD** — pipelines de build, teste e deploy
 
-1. **[planejado] Order Service** — implementar `OrderModule` (use cases, repositórios, controller) sobre modelos `Order`, `OrderItem` e `OrderDeliveryAddress`.
-2. **[planejado] Categoria de produto** — nova entidade e relacionamento com `Product`.
-3. **[planejado] Autenticação e autorização** — camada de segurança de alto nível ainda não presente.
-4. **[planejado] CI/CD** — não há workflows em `.github/workflows/` hoje.
+## Licença
 
+Projeto privado (UNLICENSED).

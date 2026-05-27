@@ -1,16 +1,21 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import type { ICacheService } from './cache.interface.js';
+import type { ICacheService } from './cache.interface';
 
 @Injectable()
-export class RedisCacheService implements ICacheService, OnModuleInit, OnModuleDestroy {
+export class RedisCacheService
+  implements ICacheService, OnModuleInit, OnModuleDestroy
+{
   private client: Redis;
 
   constructor(private readonly config: ConfigService) {
-    this.client = new Redis(this.config.get<string>('REDIS_URL', 'redis://localhost:6379'), {
-      lazyConnect: true,
-    });
+    this.client = new Redis(
+      this.config.get<string>('REDIS_URL', 'redis://localhost:6379'),
+      {
+        lazyConnect: true,
+      },
+    );
   }
 
   async onModuleInit(): Promise<void> {
@@ -32,5 +37,19 @@ export class RedisCacheService implements ICacheService, OnModuleInit, OnModuleD
 
   async del(key: string): Promise<void> {
     await this.client.del(key);
+  }
+
+  async delByPattern(pattern: string): Promise<void> {
+    let cursor = '0';
+    const keys: string[] = [];
+
+    do {
+      const [next, batch] = await this.client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = next;
+      keys.push(...batch);
+    } while (cursor !== '0');
+
+    if (!keys.length) return;
+    await this.client.del(keys);
   }
 }

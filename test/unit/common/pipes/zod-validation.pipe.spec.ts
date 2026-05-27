@@ -20,7 +20,10 @@ describe('ZodValidationPipe', () => {
       pipe.transform({ title: '' });
     } catch (e) {
       expect(e).toBeInstanceOf(BadRequestException);
-      const res = (e as BadRequestException).getResponse() as Record<string, unknown>;
+      const res = (e as BadRequestException).getResponse() as Record<
+        string,
+        unknown
+      >;
       expect(res.message).toBeDefined();
       expect(res).toHaveProperty('errors');
     }

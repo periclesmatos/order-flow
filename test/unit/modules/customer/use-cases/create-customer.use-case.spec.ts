@@ -52,7 +52,11 @@ describe('CreateCustomerUseCase', () => {
     customerRepository.findByEmail.mockResolvedValue(null);
     customerRepository.create.mockImplementation(async (c) => c);
     customerRepository.findById.mockImplementation(async () =>
-      Customer.create({ name: 'Ana', email: 'ana@example.com', phone: '+5511987654321' }),
+      Customer.create({
+        name: 'Ana',
+        email: 'ana@example.com',
+        phone: '+5511987654321',
+      }),
     );
 
     const result = await useCase.execute({
@@ -61,7 +65,9 @@ describe('CreateCustomerUseCase', () => {
       phone: '+5511987654321',
     });
 
-    expect(customerRepository.findByEmail).toHaveBeenCalledWith('ana@example.com');
+    expect(customerRepository.findByEmail).toHaveBeenCalledWith(
+      'ana@example.com',
+    );
     expect(customerRepository.create).toHaveBeenCalledTimes(1);
     expect(addressRepository.create).not.toHaveBeenCalled();
     expect(customerRepository.findById).toHaveBeenCalledTimes(1);

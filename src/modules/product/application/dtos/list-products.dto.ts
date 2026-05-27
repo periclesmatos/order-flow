@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-export const SORTABLE_FIELDS = ['name', 'price', 'createdAt', 'stockOnHand'] as const;
+export const SORTABLE_FIELDS = [
+  'name',
+  'price',
+  'createdAt',
+  'stockOnHand',
+] as const;
 
 export const ListProductsSchema = z.object({
   name: z.string().optional(),

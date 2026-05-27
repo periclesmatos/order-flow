@@ -1,14 +1,24 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import type { Request, Response } from 'express';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(@InjectPinoLogger(LoggingInterceptor.name) private readonly logger: PinoLogger) {}
+  constructor(
+    @InjectPinoLogger(LoggingInterceptor.name)
+    private readonly logger: PinoLogger,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context.switchToHttp().getRequest<Request & { id?: string; user?: { id?: string } }>();
+    const req = context
+      .switchToHttp()
+      .getRequest<Request & { id?: string; user?: { id?: string } }>();
     const { method, url, id: correlationId } = req;
     const userId = req.user?.id ?? undefined;
     const startedAt = Date.now();

@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ListProductsUseCase } from '@src/modules/product/application/use-cases/list-products.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
-import { loggerProvider, provideProductUseCase } from '@test/helpers/testing-module';
+import {
+  cacheManagerProvider,
+  loggerProvider,
+  provideProductUseCaseWithCache,
+} from '@test/helpers/testing-module';
 import { createTestProduct } from '../product-test.helpers';
 
 describe('ListProductsUseCase', () => {
@@ -21,8 +25,9 @@ describe('ListProductsUseCase', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        provideProductUseCase(ListProductsUseCase),
+        provideProductUseCaseWithCache(ListProductsUseCase),
         loggerProvider(),
+        cacheManagerProvider(),
         { provide: PRODUCT_REPOSITORY, useValue: repository },
       ],
     }).compile();

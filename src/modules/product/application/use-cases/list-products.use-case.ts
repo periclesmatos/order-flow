@@ -1,20 +1,38 @@
 import { Inject } from '@nestjs/common';
-import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
-import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
-import type { PaginatedResponse } from '../../../../shared/application/paginated-response.type.js';
-import type { ListProductsDto } from '../dtos/list-products.dto.js';
-import type { ProductFilters } from '../../domain/repositories/product.repository.interface.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
-import type { Product } from '../../domain/entities/product.entity.js';
+import { CACHE_SERVICE } from '../../../../core/cache/cache.token';
+import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface';
+import type { IProductRepository } from '../../domain/repositories/product.repository.interface';
+import type { PaginatedResponse } from '../../../../shared/application/paginated-response.type';
+import type { ListProductsDto } from '../dtos/list-products.dto';
+import type { ProductFilters } from '../../domain/repositories/product.repository.interface';
+import type { ICacheService } from '../../../../core/cache/cache.interface';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
+import { Product } from '../../domain/entities/product.entity';
+import type { ProductPrimitives } from '../../domain/entities/product.entity';
+import {
+  productListCacheKey,
+  PRODUCT_LIST_CACHE_TTL_MS,
+} from '../cache/product.cache-keys';
 
 export class ListProductsUseCase {
   constructor(
     private readonly logger: ILogger,
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    @Inject(CACHE_SERVICE)
+    private readonly cache: ICacheService,
   ) {}
 
   async execute(dto: ListProductsDto): Promise<PaginatedResponse<Product>> {
+    const key = productListCacheKey(dto);
+    const cached = await this.cache.get<PaginatedResponse<ProductPrimitives>>(key);
+    if (cached) {
+      this.logger.debug({ key }, 'PRODUCTS LIST CACHE HIT');
+      return {
+        ...cached,
+        data: cached.data.map((p) => Product.restore(p)),
+      };
+    }
     const filters: ProductFilters = {
       name: dto.name,
       isActive: dto.isActive,
@@ -25,11 +43,8 @@ export class ListProductsUseCase {
     };
     const { products, total } = await this.productRepository.findAll(filters);
     const totalPages = Math.ceil(total / dto.limit);
-    this.logger.debug(
-      { total, page: dto.page, limit: dto.limit, totalPages },
-      'PRODUCTS LISTED',
-    );
-    return {
+    this.logger.debug({ total, page: dto.page, limit: dto.limit, totalPages }, 'PRODUCTS LISTED');
+    const result: PaginatedResponse<Product> = {
       data: products,
       meta: {
         total,
@@ -40,5 +55,7 @@ export class ListProductsUseCase {
         hasPrevPage: dto.page > 1,
       },
     };
+    await this.cache.set(key, { ...result, data: result.data.map((p) => p.toJSON()) }, PRODUCT_LIST_CACHE_TTL_MS);
+    return result;
   }
 }

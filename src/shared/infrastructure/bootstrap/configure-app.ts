@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { RequestIdMiddleware } from '../../../common/middleware/request-id.middleware.js';
+import { RequestIdMiddleware } from '../../../common/middleware/request-id.middleware';
 
 export interface ConfigureAppOptions {
   swagger?: boolean;

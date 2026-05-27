@@ -2,7 +2,12 @@ import { CreateProductSchema } from '@src/modules/product/application/dtos/creat
 import { expectParseMessages } from '@test/unit/helpers/zod-schema.helpers';
 
 describe('CreateProductSchema', () => {
-  const valid = { name: 'Book', description: 'Livro de ficção', price: 9.99, stockOnHand: 2 };
+  const valid = {
+    name: 'Book',
+    description: 'Livro de ficção',
+    price: 9.99,
+    stockOnHand: 2,
+  };
 
   it('accepts valid payload and trims name and description', () => {
     const r = CreateProductSchema.safeParse({
@@ -13,7 +18,12 @@ describe('CreateProductSchema', () => {
     });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data).toEqual({ name: 'Book', description: 'Livro de ficção', price: 9.99, stockOnHand: 2 });
+      expect(r.data).toEqual({
+        name: 'Book',
+        description: 'Livro de ficção',
+        price: 9.99,
+        stockOnHand: 2,
+      });
     }
   });
 
@@ -35,7 +45,11 @@ describe('CreateProductSchema', () => {
     });
 
     it('rejects empty string', () => {
-      expectParseMessages(CreateProductSchema, { ...valid, name: '' }, 'Nome é obrigatório');
+      expectParseMessages(
+        CreateProductSchema,
+        { ...valid, name: '' },
+        'Nome é obrigatório',
+      );
     });
 
     it('rejects more than 100 characters', () => {
@@ -49,11 +63,19 @@ describe('CreateProductSchema', () => {
 
   describe('description', () => {
     it('rejects when missing', () => {
-      expectParseMessages(CreateProductSchema, { name: 'X', price: 1, stockOnHand: 0 }, 'Descrição é obrigatória');
+      expectParseMessages(
+        CreateProductSchema,
+        { name: 'X', price: 1, stockOnHand: 0 },
+        'Descrição é obrigatória',
+      );
     });
 
     it('rejects empty string', () => {
-      expectParseMessages(CreateProductSchema, { ...valid, description: '' }, 'Descrição é obrigatória');
+      expectParseMessages(
+        CreateProductSchema,
+        { ...valid, description: '' },
+        'Descrição é obrigatória',
+      );
     });
 
     it('rejects more than 255 characters', () => {

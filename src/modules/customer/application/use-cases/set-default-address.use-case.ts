@@ -1,13 +1,13 @@
 import { Inject } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
-import { Address } from '../../domain/entities/address.entity.js';
-import { ADDRESS_REPOSITORY } from '../../domain/repositories/address.repository.interface.js';
-import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface.js';
-import { AddressNotFoundError } from '../../domain/errors/address.errors.js';
-import { CustomerNotFoundError } from '../../domain/errors/customer.errors.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
-import type { IAddressRepository } from '../../domain/repositories/address.repository.interface.js';
-import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface.js';
+import { Address } from '../../domain/entities/address.entity';
+import { ADDRESS_REPOSITORY } from '../../domain/repositories/address.repository.interface';
+import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface';
+import { AddressNotFoundError } from '../../domain/errors/address.errors';
+import { CustomerNotFoundError } from '../../domain/errors/customer.errors';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
+import type { IAddressRepository } from '../../domain/repositories/address.repository.interface';
+import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface';
 
 export class SetDefaultAddressUseCase {
   constructor(

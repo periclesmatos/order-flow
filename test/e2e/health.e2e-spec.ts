@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createE2eApp } from '../helpers/create-e2e-app.js';
+import { createE2eApp } from '../helpers/create-e2e-app';
 
 describe('Health API (e2e)', () => {
   let app: INestApplication;

@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { PrismaService } from '../../../../core/prisma/prisma.service.js';
-import { Customer } from '../../domain/entities/customer.entity.js';
-import { addressFromPrismaRow, type AddressRow } from './address.repository.js';
+import { PrismaService } from '../../../../core/prisma/prisma.service';
+import { Customer } from '../../domain/entities/customer.entity';
+import { addressFromPrismaRow, type AddressRow } from './address.repository';
 import type {
   ICustomerRepository,
   CustomerFilters,
   PageResult,
   CustomerSortableField,
-} from '../../domain/repositories/customer.repository.interface.js';
+} from '../../domain/repositories/customer.repository.interface';
 
 type CustomerRow = {
   id: string;

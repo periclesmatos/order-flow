@@ -1,8 +1,8 @@
-import { Address } from './address.entity.js';
-import { Phone } from './phone.value-object.js';
-import { Email } from './email.value-object.js';
-import type { AddressProps, CreateAddressProps } from './address.entity.js';
-import { CustomerAddressesDefaultCountError } from '../errors/address.errors.js';
+import { Address } from './address.entity';
+import { Phone } from './phone.value-object';
+import { Email } from './email.value-object';
+import type { AddressProps, CreateAddressProps } from './address.entity';
+import { CustomerAddressesDefaultCountError } from '../errors/address.errors';
 
 export interface CustomerProps {
   id: string;
@@ -15,7 +15,10 @@ export interface CustomerProps {
   addresses: Address[];
 }
 
-export type CustomerPrimitives = Omit<CustomerProps, 'email' | 'phone' | 'addresses'> & {
+export type CustomerPrimitives = Omit<
+  CustomerProps,
+  'email' | 'phone' | 'addresses'
+> & {
   email: string;
   phone: string;
   addresses?: AddressProps[];
@@ -28,14 +31,22 @@ export type CreateCustomerProps = {
   addresses?: CreateAddressProps[];
 };
 
-function normalizeCreateAddresses(customerId: string, items: CreateAddressProps[] | undefined): Address[] {
+function normalizeCreateAddresses(
+  customerId: string,
+  items: CreateAddressProps[] | undefined,
+): Address[] {
   if (!items || items.length === 0) {
     return [];
   }
 
   if (items.length === 1) {
     const only = items[0];
-    return [Address.create(customerId, { ...only, isDefault: only.isDefault ?? true })];
+    return [
+      Address.create(customerId, {
+        ...only,
+        isDefault: only.isDefault ?? true,
+      }),
+    ];
   }
 
   const defaultFlags = items.map((a) => a.isDefault === true);

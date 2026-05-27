@@ -19,7 +19,11 @@ describe('UpdateAddressSchema', () => {
   });
 
   it('rejects empty street when provided', () => {
-    expectParseMessages(UpdateAddressSchema, { street: '' }, 'Rua é obrigatória');
+    expectParseMessages(
+      UpdateAddressSchema,
+      { street: '' },
+      'Rua é obrigatória',
+    );
   });
 
   it('rejects street longer than 100 characters', () => {
@@ -31,7 +35,11 @@ describe('UpdateAddressSchema', () => {
   });
 
   it('rejects street when not a string', () => {
-    expectParseMessages(UpdateAddressSchema, { street: 123 }, 'Rua deve ser texto');
+    expectParseMessages(
+      UpdateAddressSchema,
+      { street: 123 },
+      'Rua deve ser texto',
+    );
   });
 
   it('accepts isDefault only', () => {

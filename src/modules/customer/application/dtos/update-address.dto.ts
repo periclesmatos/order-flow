@@ -47,7 +47,9 @@ const UpdateAddressObjectSchema = z.object({
     .max(100, 'País deve ter no máximo 100 caracteres')
     .trim()
     .optional(),
-  isDefault: z.boolean({ error: () => 'isDefault deve ser verdadeiro ou falso' }).optional(),
+  isDefault: z
+    .boolean({ error: () => 'isDefault deve ser verdadeiro ou falso' })
+    .optional(),
 });
 
 export const UpdateAddressSchema = UpdateAddressObjectSchema.refine(

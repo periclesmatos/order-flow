@@ -20,8 +20,12 @@ import {
 
 describe('UpdateAddressUseCase', () => {
   let useCase: UpdateAddressUseCase;
-  let customerRepository: ReturnType<typeof mockAddressRepositories>['customerRepository'];
-  let addressRepository: ReturnType<typeof mockAddressRepositories>['addressRepository'];
+  let customerRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['customerRepository'];
+  let addressRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['addressRepository'];
 
   beforeEach(async () => {
     const repos = mockAddressRepositories();

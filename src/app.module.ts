@@ -3,20 +3,22 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
-import { CoreModule } from './core/core.module.js';
-import { OrderModule } from './modules/order/order.module.js';
-import { ProductModule } from './modules/product/product.module.js';
-import { CustomerModule } from './modules/customer/customer.module.js';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
-import { getLoggerModuleParams } from './shared/infrastructure/config/pino.config.js';
+import { CoreModule } from './core/core.module';
+import { OrderModule } from './modules/order/order.module';
+import { ProductModule } from './modules/product/product.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { getLoggerModuleParams } from './shared/infrastructure/config/pino.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot({ wildcard: false, global: true }),
     LoggerModule.forRoot(getLoggerModuleParams()),
     ThrottlerModule.forRoot([
       {

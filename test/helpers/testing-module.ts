@@ -1,8 +1,12 @@
 import { type DynamicModule, type Provider } from '@nestjs/common';
 import { CACHE_SERVICE } from '@src/core/cache/cache.token';
 import type { ICacheService } from '@src/core/cache/cache.interface';
-import { ClsPluginTransactional, NoOpTransactionalAdapter } from '@nestjs-cls/transactional';
+import {
+  ClsPluginTransactional,
+  NoOpTransactionalAdapter,
+} from '@nestjs-cls/transactional';
 import { ClsModule } from 'nestjs-cls';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
 import { CUSTOMER_REPOSITORY } from '@src/modules/customer/domain/repositories/customer.repository.interface';
@@ -34,13 +38,38 @@ export function provideProductUseCase<T>(
 }
 
 export function provideProductUseCaseWithCache<T>(
-  UseCaseClass: new (logger: ILogger, repository: IProductRepository, cache: ICacheService) => T,
+  UseCaseClass: new (
+    logger: ILogger,
+    repository: IProductRepository,
+    cache: ICacheService,
+  ) => T,
 ): Provider {
   return {
     provide: UseCaseClass,
     inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-    useFactory: (logger: ILogger, repository: IProductRepository, cache: ICacheService) =>
-      new UseCaseClass(logger, repository, cache),
+    useFactory: (
+      logger: ILogger,
+      repository: IProductRepository,
+      cache: ICacheService,
+    ) => new UseCaseClass(logger, repository, cache),
+  };
+}
+
+export function provideProductUseCaseWithEventEmitter<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    repository: IProductRepository,
+    eventEmitter: EventEmitter2,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+    useFactory: (
+      logger: ILogger,
+      repository: IProductRepository,
+      eventEmitter: EventEmitter2,
+    ) => new UseCaseClass(logger, repository, eventEmitter),
   };
 }
 
@@ -99,6 +128,18 @@ export function loggerProvider(): Provider {
 export function cacheManagerProvider(): Provider {
   return {
     provide: CACHE_SERVICE,
-    useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } satisfies ICacheService,
+    useValue: {
+      get: jest.fn(),
+      set: jest.fn(),
+      del: jest.fn(),
+      delByPattern: jest.fn(),
+    } satisfies ICacheService,
+  };
+}
+
+export function eventEmitterProvider(): Provider {
+  return {
+    provide: 'EventEmitter2',
+    useValue: { emitAsync: jest.fn() } as unknown as EventEmitter2,
   };
 }

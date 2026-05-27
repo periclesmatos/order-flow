@@ -4,7 +4,11 @@ import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/pro
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductNotFoundError } from '@src/modules/product/domain/errors/product.errors';
-import { cacheManagerProvider, loggerProvider, provideProductUseCaseWithCache } from '@test/helpers/testing-module';
+import {
+  eventEmitterProvider,
+  loggerProvider,
+  provideProductUseCaseWithEventEmitter,
+} from '@test/helpers/testing-module';
 import { createTestProduct } from '../product-test.helpers';
 
 describe('UpdateProductPriceUseCase', () => {
@@ -23,9 +27,9 @@ describe('UpdateProductPriceUseCase', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        provideProductUseCaseWithCache(UpdateProductPriceUseCase),
+        provideProductUseCaseWithEventEmitter(UpdateProductPriceUseCase),
         loggerProvider(),
-        cacheManagerProvider(),
+        eventEmitterProvider(),
         { provide: PRODUCT_REPOSITORY, useValue: repository },
       ],
     }).compile();
@@ -36,13 +40,19 @@ describe('UpdateProductPriceUseCase', () => {
   it('throws when product not found', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('no-id', { price: 100 })).rejects.toBeInstanceOf(ProductNotFoundError);
+    await expect(
+      useCase.execute('no-id', { price: 100 }),
+    ).rejects.toBeInstanceOf(ProductNotFoundError);
 
     expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('updates price and returns product with float value', async () => {
-    const p = createTestProduct({ name: 'Widget', price: Money.fromCents(100), stockOnHand: 2 });
+    const p = createTestProduct({
+      name: 'Widget',
+      price: Money.fromCents(100),
+      stockOnHand: 2,
+    });
     repository.findById.mockResolvedValue(p);
     repository.update.mockImplementation(async (_, prod) => prod);
 

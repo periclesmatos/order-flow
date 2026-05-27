@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { EmailEmptyError, EmailInvalidFormatError } from '../errors/email.errors.js';
+import {
+  EmailEmptyError,
+  EmailInvalidFormatError,
+} from '../errors/email.errors';
 
 const emailSchema = z.email();
 

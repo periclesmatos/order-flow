@@ -59,11 +59,19 @@ describe('CreateAddressSchema', () => {
     });
 
     it('rejects when not a string', () => {
-      expectParseMessages(CreateAddressSchema, { ...valid, street: 1 }, 'Rua deve ser texto');
+      expectParseMessages(
+        CreateAddressSchema,
+        { ...valid, street: 1 },
+        'Rua deve ser texto',
+      );
     });
 
     it('rejects empty street', () => {
-      expectParseMessages(CreateAddressSchema, { ...valid, street: '' }, 'Rua é obrigatória');
+      expectParseMessages(
+        CreateAddressSchema,
+        { ...valid, street: '' },
+        'Rua é obrigatória',
+      );
     });
 
     it('rejects street longer than 100 characters', () => {
@@ -82,7 +90,11 @@ describe('CreateAddressSchema', () => {
     });
 
     it('rejects when not a string', () => {
-      expectParseMessages(CreateAddressSchema, { ...valid, number: 100 }, 'Número deve ser texto');
+      expectParseMessages(
+        CreateAddressSchema,
+        { ...valid, number: 100 },
+        'Número deve ser texto',
+      );
     });
   });
 
@@ -118,7 +130,11 @@ describe('CreateAddressSchema', () => {
     });
 
     it('rejects when not a string', () => {
-      expectParseMessages(CreateAddressSchema, { ...valid, city: 1 }, 'Cidade deve ser texto');
+      expectParseMessages(
+        CreateAddressSchema,
+        { ...valid, city: 1 },
+        'Cidade deve ser texto',
+      );
     });
   });
 
@@ -143,7 +159,11 @@ describe('CreateAddressSchema', () => {
     });
 
     it('rejects when not a string', () => {
-      expectParseMessages(CreateAddressSchema, { ...valid, country: 1 }, 'País deve ser texto');
+      expectParseMessages(
+        CreateAddressSchema,
+        { ...valid, country: 1 },
+        'País deve ser texto',
+      );
     });
   });
 });

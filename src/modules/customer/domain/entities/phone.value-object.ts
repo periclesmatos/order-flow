@@ -1,5 +1,9 @@
 import { parsePhoneNumberWithError, ParseError } from 'libphonenumber-js';
-import { PhoneEmptyError, PhoneInvalidFormatError, PhoneInvalidNumberError } from '../errors/phone.errors.js';
+import {
+  PhoneEmptyError,
+  PhoneInvalidFormatError,
+  PhoneInvalidNumberError,
+} from '../errors/phone.errors';
 import type { CountryCode, PhoneNumber } from 'libphonenumber-js';
 
 const DEFAULT_COUNTRY: CountryCode = 'BR';
@@ -17,7 +21,10 @@ export class Phone {
     this._nationalNumber = String(parsed.nationalNumber);
   }
 
-  static from(input: string, defaultCountry: CountryCode = DEFAULT_COUNTRY): Phone {
+  static from(
+    input: string,
+    defaultCountry: CountryCode = DEFAULT_COUNTRY,
+  ): Phone {
     if (!input || !input.trim()) {
       throw new PhoneEmptyError();
     }

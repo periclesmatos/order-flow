@@ -1,13 +1,13 @@
 import { Inject } from '@nestjs/common';
-import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface.js';
-import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface.js';
-import type { Customer } from '../../domain/entities/customer.entity.js';
-import type { UpdateCustomerDto } from '../dtos/update-customer.dto.js';
+import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface';
+import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface';
+import type { Customer } from '../../domain/entities/customer.entity';
+import type { UpdateCustomerDto } from '../dtos/update-customer.dto';
 import {
   CustomerEmailAlreadyExistsError,
   CustomerNotFoundError,
-} from '../../domain/errors/customer.errors.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
+} from '../../domain/errors/customer.errors';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
 
 export class UpdateCustomerUseCase {
   constructor(
@@ -24,8 +24,11 @@ export class UpdateCustomerUseCase {
     }
 
     if (dto.email && dto.email !== customer.email.value) {
-      const existingCustomer = await this.customerRepository.findByEmail(dto.email);
-      if (existingCustomer) throw new CustomerEmailAlreadyExistsError(dto.email);
+      const existingCustomer = await this.customerRepository.findByEmail(
+        dto.email,
+      );
+      if (existingCustomer)
+        throw new CustomerEmailAlreadyExistsError(dto.email);
       customer.email = dto.email;
     }
 

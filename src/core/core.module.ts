@@ -2,10 +2,10 @@ import { Global, Module } from '@nestjs/common';
 import { ClsModule } from 'nestjs-cls';
 import { ClsPluginTransactional } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { PrismaModule } from './prisma/prisma.module.js';
-import { PrismaService } from './prisma/prisma.service.js';
-import { HealthModule } from './health/health.module.js';
-import { AppCacheModule } from './cache/cache.module.js';
+import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
+import { HealthModule } from './health/health.module';
+import { AppCacheModule } from './cache/cache.module';
 
 @Global()
 @Module({

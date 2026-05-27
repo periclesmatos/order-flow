@@ -1,4 +1,4 @@
-import type { Customer } from '../entities/customer.entity.js';
+import type { Customer } from '../entities/customer.entity';
 
 export const CUSTOMER_REPOSITORY = 'CUSTOMER_REPOSITORY';
 

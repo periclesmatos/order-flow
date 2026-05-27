@@ -4,8 +4,15 @@ import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/pro
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductAlreadyExistsError } from '@src/modules/product/domain/errors/product.errors';
-import { loggerProvider, provideProductUseCase } from '@test/helpers/testing-module';
-import { createTestProduct, DEFAULT_PRODUCT_DESCRIPTION } from '../product-test.helpers';
+import {
+  eventEmitterProvider,
+  loggerProvider,
+  provideProductUseCaseWithEventEmitter,
+} from '@test/helpers/testing-module';
+import {
+  createTestProduct,
+  DEFAULT_PRODUCT_DESCRIPTION,
+} from '../product-test.helpers';
 
 describe('CreateProductUseCase', () => {
   let useCase: CreateProductUseCase;
@@ -23,8 +30,9 @@ describe('CreateProductUseCase', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        provideProductUseCase(CreateProductUseCase),
+        provideProductUseCaseWithEventEmitter(CreateProductUseCase),
         loggerProvider(),
+        eventEmitterProvider(),
         { provide: PRODUCT_REPOSITORY, useValue: repository },
       ],
     }).compile();
@@ -53,7 +61,11 @@ describe('CreateProductUseCase', () => {
   });
 
   it('throws when product name already exists', async () => {
-    const existing = createTestProduct({ name: 'Pen', price: Money.fromFloat(1), stockOnHand: 0 });
+    const existing = createTestProduct({
+      name: 'Pen',
+      price: Money.fromFloat(1),
+      stockOnHand: 0,
+    });
     repository.findByName.mockResolvedValue(existing);
 
     await expect(

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CreateAddressSchema } from './create-address.dto.js';
+import { CreateAddressSchema } from './create-address.dto';
 
 export const CreateCustomerSchema = z
   .object({

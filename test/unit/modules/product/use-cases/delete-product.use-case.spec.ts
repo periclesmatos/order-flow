@@ -4,7 +4,11 @@ import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/pro
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import { ProductNotFoundError } from '@src/modules/product/domain/errors/product.errors';
-import { cacheManagerProvider, loggerProvider, provideProductUseCaseWithCache } from '@test/helpers/testing-module';
+import {
+  eventEmitterProvider,
+  loggerProvider,
+  provideProductUseCaseWithEventEmitter,
+} from '@test/helpers/testing-module';
 import { createTestProduct } from '../product-test.helpers';
 
 describe('DeleteProductUseCase', () => {
@@ -23,9 +27,9 @@ describe('DeleteProductUseCase', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        provideProductUseCaseWithCache(DeleteProductUseCase),
+        provideProductUseCaseWithEventEmitter(DeleteProductUseCase),
         loggerProvider(),
-        cacheManagerProvider(),
+        eventEmitterProvider(),
         { provide: PRODUCT_REPOSITORY, useValue: repository },
       ],
     }).compile();
@@ -34,7 +38,11 @@ describe('DeleteProductUseCase', () => {
   });
 
   it('deletes product when found', async () => {
-    const p = createTestProduct({ name: 'Temp', price: Money.fromCents(100), stockOnHand: 1 });
+    const p = createTestProduct({
+      name: 'Temp',
+      price: Money.fromCents(100),
+      stockOnHand: 1,
+    });
     repository.findById.mockResolvedValue(p);
     repository.delete.mockResolvedValue(undefined);
 
@@ -47,7 +55,9 @@ describe('DeleteProductUseCase', () => {
   it('throws when product not found', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('non-existent-id')).rejects.toBeInstanceOf(ProductNotFoundError);
+    await expect(useCase.execute('non-existent-id')).rejects.toBeInstanceOf(
+      ProductNotFoundError,
+    );
 
     expect(repository.delete).not.toHaveBeenCalled();
   });

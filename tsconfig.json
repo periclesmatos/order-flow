@@ -4,9 +4,8 @@
       "jest",
       "node"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "resolvePackageJsonExports": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -19,7 +18,7 @@
     //"ignoreDeprecations": "6.0",
     "sourceMap": true,
     "outDir": "./dist",
-    "incremental": true,
+    "rootDir": "./src",
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
@@ -32,6 +31,6 @@
       "@test/*": ["./test/*"]
     }
   },
-  "include": ["src/**/*.ts", "prisma.config.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

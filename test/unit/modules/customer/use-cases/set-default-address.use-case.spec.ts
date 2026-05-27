@@ -19,8 +19,12 @@ import {
 
 describe('SetDefaultAddressUseCase', () => {
   let useCase: SetDefaultAddressUseCase;
-  let customerRepository: ReturnType<typeof mockAddressRepositories>['customerRepository'];
-  let addressRepository: ReturnType<typeof mockAddressRepositories>['addressRepository'];
+  let customerRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['customerRepository'];
+  let addressRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['addressRepository'];
 
   beforeEach(async () => {
     const repos = mockAddressRepositories();
@@ -70,9 +74,9 @@ describe('SetDefaultAddressUseCase', () => {
   it('throws when customer not found', async () => {
     customerRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(CUSTOMER_ID, ADDRESS_ID)).rejects.toBeInstanceOf(
-      CustomerNotFoundError,
-    );
+    await expect(
+      useCase.execute(CUSTOMER_ID, ADDRESS_ID),
+    ).rejects.toBeInstanceOf(CustomerNotFoundError);
 
     expect(addressRepository.update).not.toHaveBeenCalled();
   });
@@ -81,9 +85,9 @@ describe('SetDefaultAddressUseCase', () => {
     customerRepository.findById.mockResolvedValue(makeCustomer());
     addressRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(CUSTOMER_ID, ADDRESS_ID)).rejects.toBeInstanceOf(
-      AddressNotFoundError,
-    );
+    await expect(
+      useCase.execute(CUSTOMER_ID, ADDRESS_ID),
+    ).rejects.toBeInstanceOf(AddressNotFoundError);
 
     expect(addressRepository.update).not.toHaveBeenCalled();
   });

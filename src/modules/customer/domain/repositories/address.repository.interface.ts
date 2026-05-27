@@ -1,4 +1,4 @@
-import type { Address } from "../entities/address.entity.js";
+import type { Address } from '../entities/address.entity';
 
 export const ADDRESS_REPOSITORY = 'ADDRESS_REPOSITORY';
 

@@ -1,5 +1,8 @@
 import { Email } from '@src/modules/customer/domain/entities/email.value-object';
-import { EmailEmptyError, EmailInvalidFormatError } from '@src/modules/customer/domain/errors/email.errors';
+import {
+  EmailEmptyError,
+  EmailInvalidFormatError,
+} from '@src/modules/customer/domain/errors/email.errors';
 
 describe('Email value object', () => {
   describe('from() - valid', () => {
@@ -65,15 +68,21 @@ describe('Email value object', () => {
     });
 
     it('throws EmailEmptyError for null', () => {
-      expect(() => Email.from(null as unknown as string)).toThrow(EmailEmptyError);
+      expect(() => Email.from(null as unknown as string)).toThrow(
+        EmailEmptyError,
+      );
     });
 
     it('throws EmailEmptyError for undefined', () => {
-      expect(() => Email.from(undefined as unknown as string)).toThrow(EmailEmptyError);
+      expect(() => Email.from(undefined as unknown as string)).toThrow(
+        EmailEmptyError,
+      );
     });
 
     it('throws EmailInvalidFormatError when missing @', () => {
-      expect(() => Email.from('userexample.com')).toThrow(EmailInvalidFormatError);
+      expect(() => Email.from('userexample.com')).toThrow(
+        EmailInvalidFormatError,
+      );
     });
 
     it('throws EmailInvalidFormatError when missing local part', () => {
@@ -89,11 +98,15 @@ describe('Email value object', () => {
     });
 
     it('throws EmailInvalidFormatError for spaces inside the address', () => {
-      expect(() => Email.from('us er@example.com')).toThrow(EmailInvalidFormatError);
+      expect(() => Email.from('us er@example.com')).toThrow(
+        EmailInvalidFormatError,
+      );
     });
 
     it('throws EmailInvalidFormatError for two @ characters', () => {
-      expect(() => Email.from('user@@example.com')).toThrow(EmailInvalidFormatError);
+      expect(() => Email.from('user@@example.com')).toThrow(
+        EmailInvalidFormatError,
+      );
     });
   });
 

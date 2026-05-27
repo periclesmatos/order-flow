@@ -6,7 +6,9 @@ import type { IncomingMessage, ServerResponse } from 'http';
 const isDev = process.env.NODE_ENV !== 'production';
 
 /** path-to-regexp v8 / Nest 11 — evita `*` legado que vira `/api/v1/*` com global prefix */
-const PINO_FOR_ROUTES = [{ path: '{*path}', method: RequestMethod.ALL }] as const;
+const PINO_FOR_ROUTES = [
+  { path: '{*path}', method: RequestMethod.ALL },
+] as const;
 
 export function getLoggerModuleParams(): Params {
   return {
@@ -15,7 +17,8 @@ export function getLoggerModuleParams(): Params {
   };
 }
 
-export function getPinoHttpConfig(): Options {  return {
+export function getPinoHttpConfig(): Options {
+  return {
     level: process.env.LOG_LEVEL ?? (isDev ? 'debug' : 'info'),
     genReqId: (req: IncomingMessage) => {
       const incoming = req.headers['x-request-id'];

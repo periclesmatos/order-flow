@@ -1,16 +1,16 @@
 import { Inject } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
-import { Customer } from '../../domain/entities/customer.entity.js';
-import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface.js';
-import { ADDRESS_REPOSITORY } from '../../domain/repositories/address.repository.interface.js';
+import { Customer } from '../../domain/entities/customer.entity';
+import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface';
+import { ADDRESS_REPOSITORY } from '../../domain/repositories/address.repository.interface';
 import {
   CustomerEmailAlreadyExistsError,
   CustomerNotFoundError,
-} from '../../domain/errors/customer.errors.js';
-import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface.js';
-import type { CreateCustomerDto } from '../dtos/create-customer.dto.js';
-import type { IAddressRepository } from '../../domain/repositories/address.repository.interface.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
+} from '../../domain/errors/customer.errors';
+import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface';
+import type { CreateCustomerDto } from '../dtos/create-customer.dto';
+import type { IAddressRepository } from '../../domain/repositories/address.repository.interface';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
 
 export class CreateCustomerUseCase {
   constructor(

@@ -1,13 +1,16 @@
 import { Inject } from '@nestjs/common';
-import { CACHE_SERVICE } from '../../../../core/cache/cache.token.js';
-import { Product } from '../../domain/entities/product.entity.js';
-import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface.js';
-import { ProductNotFoundError } from '../../domain/errors/product.errors.js';
-import { productCacheKey, PRODUCT_CACHE_TTL_MS } from '../cache/product.cache-keys.js';
-import type { ICacheService } from '../../../../core/cache/cache.interface.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
-import type { ProductPrimitives } from '../../domain/entities/product.entity.js';
-import type { IProductRepository } from '../../domain/repositories/product.repository.interface.js';
+import { CACHE_SERVICE } from '../../../../core/cache/cache.token';
+import { Product } from '../../domain/entities/product.entity';
+import { PRODUCT_REPOSITORY } from '../../domain/repositories/product.repository.interface';
+import { ProductNotFoundError } from '../../domain/errors/product.errors';
+import {
+  productCacheKey,
+  PRODUCT_CACHE_TTL_MS,
+} from '../cache/product.cache-keys';
+import type { ICacheService } from '../../../../core/cache/cache.interface';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
+import type { ProductPrimitives } from '../../domain/entities/product.entity';
+import type { IProductRepository } from '../../domain/repositories/product.repository.interface';
 
 export class GetProductUseCase {
   constructor(

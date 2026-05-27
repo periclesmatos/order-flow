@@ -2,9 +2,11 @@ import { z } from 'zod';
 
 export const UpdateCustomerObjectSchema = z.object({
   name: z.string().max(100).optional(),
-  email: z.email({
-    message: 'E-mail inválido',
-  }).optional(),
+  email: z
+    .email({
+      message: 'E-mail inválido',
+    })
+    .optional(),
   phone: z.string().optional(),
 });
 

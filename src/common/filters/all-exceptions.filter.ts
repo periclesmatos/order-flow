@@ -1,11 +1,20 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import type { Request, Response } from 'express';
-import { DomainError } from '../../shared/domain/errors/domain.error.js';
+import { DomainError } from '../../shared/domain/errors/domain.error';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(@InjectPinoLogger(AllExceptionsFilter.name) private readonly logger: PinoLogger) {}
+  constructor(
+    @InjectPinoLogger(AllExceptionsFilter.name)
+    private readonly logger: PinoLogger,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -28,7 +37,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = res;
       } else {
         const body = res as Record<string, unknown>;
-        message = (body.message as string | string[] | undefined) ?? (Object.keys(body).length > 0 ? body : exception.message);
+        message =
+          (body.message as string | string[] | undefined) ??
+          (Object.keys(body).length > 0 ? body : exception.message);
         validationErrors = body.errors;
       }
     } else {
@@ -38,7 +49,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const stack = exception instanceof Error ? exception.stack : undefined;
 
-    const logMessage = typeof message === 'string' ? message : Array.isArray(message) ? message.join('; ') : JSON.stringify(message);
+    const logMessage =
+      typeof message === 'string'
+        ? message
+        : Array.isArray(message)
+          ? message.join('; ')
+          : JSON.stringify(message);
 
     if (statusCode >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
       this.logger.error({ statusCode, correlationId, stack }, logMessage);

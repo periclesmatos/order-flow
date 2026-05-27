@@ -34,7 +34,9 @@ import {
     {
       provide: E2E_PRISMA_HEALTH,
       useValue: {
-        isHealthy: async (key: string) => ({ [key]: { status: 'up' as const } }),
+        isHealthy: async (key: string) => ({
+          [key]: { status: 'up' as const },
+        }),
       },
     },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },

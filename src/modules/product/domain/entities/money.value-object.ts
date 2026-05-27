@@ -1,4 +1,9 @@
-import { MoneyNegativeCentsError, MoneyNegativeFactorError, MoneyNonIntegerCentsError, MoneySubtractWouldGoNegativeError } from '../errors/money.errors.js';
+import {
+  MoneyNegativeCentsError,
+  MoneyNegativeFactorError,
+  MoneyNonIntegerCentsError,
+  MoneySubtractWouldGoNegativeError,
+} from '../errors/money.errors';
 
 export class Money {
   private readonly _cents: number;

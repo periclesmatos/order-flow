@@ -26,6 +26,7 @@ Principais capacidades atuais:
 - Gestão de endereços por cliente (criar, atualizar, remover, definir padrão)
 - CRUD de produtos com nome, descrição, preço em centavos, estoque e quantidade reservada
 - Cache Redis em consulta de produto por ID
+- Cache Redis na listagem de produtos (com invalidação por eventos)
 - Health checks (liveness e readiness com Prisma)
 - Documentação OpenAPI em `/api/docs`
 
@@ -35,7 +36,7 @@ Principais capacidades atuais:
 |--------|------------|
 | Runtime | Node.js 20+ |
 | Framework | NestJS 11 |
-| Linguagem | TypeScript 5.7 (ESM) |
+| Linguagem | TypeScript 5.7 (CommonJS) |
 | ORM | Prisma 7 + PostgreSQL 16 |
 | Cache | Redis 7 (`ioredis`) |
 | Validação HTTP | Zod + `ZodValidationPipe` |
@@ -63,7 +64,7 @@ HTTP → Controller → Use Case → Repository (Prisma) → PostgreSQL
                       ↓
                  Domain (entidades / regras)
                       ↓
-                 Cache (Redis) — apenas em Get Product hoje
+                 Cache (Redis) — Get Product e List Products
 ```
 
 Módulos registrados em `AppModule`:
@@ -189,6 +190,7 @@ Detalhes de payloads e respostas: Swagger.
 | `DATABASE_URL` | Connection string PostgreSQL | `postgresql://postgres:postgres@localhost:5432/order_flow` |
 | `REDIS_URL` | URL do Redis para cache | `redis://localhost:6379` |
 | `PRODUCT_CACHE_TTL_MS` | TTL do cache de produto (ms) | `300000` (opcional; padrão 5 min) |
+| `PRODUCT_LIST_CACHE_TTL_MS` | TTL do cache de listagem de produtos (ms) | `120000` (opcional; padrão 2 min) |
 | `LOG_LEVEL` | Nível do Pino | `debug` |
 | `CORS_ORIGIN` | Origens permitidas (vírgula) | omitir = todas em dev |
 
@@ -204,7 +206,7 @@ Detalhes de payloads e respostas: Swagger.
 | `npm run test:cov` | Cobertura |
 | `npm run typecheck` | Verificação TypeScript |
 | `npm run lint` | ESLint |
-| `npm run prisma:generate` | Gerar client Prisma (ESM) |
+| `npm run prisma:generate` | Gerar client Prisma (CJS) |
 | `npm run prisma:migrate` | Migrations em dev |
 | `npm run prisma:migrate:deploy` | Migrations em produção |
 | `npm run prisma:studio` | UI do Prisma |
@@ -226,14 +228,32 @@ Há cobertura unitária ampla em customer e product; e2e inclui `products.e2e-sp
 - **Arquitetura em camadas por módulo** — isola regras de negócio (entidades, VOs, erros `DomainError`) da infraestrutura Nest/Prisma e facilita testes com repositórios in-memory.
 - **Use cases explícitos** — cada operação de aplicação é uma classe injetável; controllers permanecem finos (validação + apresentação).
 - **Zod nos DTOs** — validação declarativa reutilizável em pipe global por endpoint, alinhada ao TypeScript.
-- **Prisma com client em `src/generated/prisma`** — ESM nativo (`"type": "module"`) com script de patch pós-generate.
+- **Prisma com client em `src/generated/prisma`** — gerado em CommonJS (`moduleFormat = "cjs"`), sem patch pós-generate.
 - **Preço em centavos (`Int`)** — evita ponto flutuante; `Money` no domínio encapsula regras de valor.
-- **Cache só em `GetProduct`** — reduz carga em leitura frequente; TTL configurável; listagem não cacheada para consistência de filtros.
+- **Cache em `GetProduct` e `ListProducts`** — reduz carga em leitura frequente; TTL configurável; listagem cacheada por combinação de paginação/filtros/ordenação e invalidada por eventos em qualquer mutação de produto.
 - **Transações via CLS + Prisma adapter** — propaga contexto transacional sem acoplar use cases ao `PrismaService` diretamente em todos os fluxos.
 - **Observabilidade com Pino** — logs estruturados; `LoggingInterceptor` e `AllExceptionsFilter` com `correlationId` (request id).
 - **Throttler global** — 100 req/min por padrão; health checks isentos (`@SkipThrottle`).
 - **Helmet + CORS + shutdown hooks** — endurecimento HTTP e encerramento gracioso em produção.
 - **Swagger na raiz `/api/docs`** — contrato vivo para integração frontend ou QA.
+
+## Cache de produtos
+
+### Chaves e TTL
+
+- `product:{id}`: cache do `GET /products/:id` (TTL via `PRODUCT_CACHE_TTL_MS`)
+- `products:list:{page}:{limit}:{sortBy}:{order}:{name}:{isActive}`: cache do `GET /products` (TTL via `PRODUCT_LIST_CACHE_TTL_MS`)
+
+### Invalidação por eventos (consistência total)
+
+Qualquer mutação de produto (create/update/update-price/update-amount/delete) emite o evento `product.mutated`.
+
+O handler invalida:
+
+- a chave do produto (`product:{id}`)
+- todas as variações de listagem (`products:list:*`)
+
+Isso garante que o cache de listagem não sirva resultados obsoletos após mudanças.
 
 ## Roadmap
 

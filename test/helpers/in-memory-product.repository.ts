@@ -7,7 +7,10 @@ import type {
   ProductSortableField,
 } from '@src/modules/product/domain/repositories/product.repository.interface';
 
-function sortKey(product: Product, field: ProductSortableField): string | number | Date {
+function sortKey(
+  product: Product,
+  field: ProductSortableField,
+): string | number | Date {
   switch (field) {
     case 'name':
       return product.name.toLowerCase();

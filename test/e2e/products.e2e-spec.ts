@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createE2eApp } from '../helpers/create-e2e-app.js';
+import { createE2eApp } from '../helpers/create-e2e-app';
 
 const PRODUCTS = '/api/v1/products';
 const DEFAULT_DESCRIPTION = 'Descrição do produto para testes';
@@ -47,7 +47,12 @@ describe('Products API (e2e)', () => {
   it('POST /api/v1/products returns 400 when body is invalid', () => {
     return request(app.getHttpServer())
       .post(PRODUCTS)
-      .send({ name: '', description: DEFAULT_DESCRIPTION, price: 10, stockOnHand: 1 })
+      .send({
+        name: '',
+        description: DEFAULT_DESCRIPTION,
+        price: 10,
+        stockOnHand: 1,
+      })
       .expect(400)
       .expect((res) => {
         expect(res.body).toMatchObject({ statusCode: 400 });

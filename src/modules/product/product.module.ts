@@ -1,18 +1,20 @@
 import { Module } from '@nestjs/common';
-import { CACHE_SERVICE } from '../../core/cache/cache.token.js';
-import type { ICacheService } from '../../core/cache/cache.interface.js';
-import { ProductController } from './presentation/controllers/product.controller.js';
-import { CreateProductUseCase } from './application/use-cases/create-product.use-case.js';
-import { ListProductsUseCase } from './application/use-cases/list-products.use-case.js';
-import { GetProductUseCase } from './application/use-cases/get-product.use-case.js';
-import { UpdateProductUseCase } from './application/use-cases/update-product.use-case.js';
-import { UpdateProductPriceUseCase } from './application/use-cases/update-product-price.use-case.js';
-import { UpdateProductAmountUseCase } from './application/use-cases/update-product-amount.use-case.js';
-import { DeleteProductUseCase } from './application/use-cases/delete-product.use-case.js';
-import { ProductRepository } from './infrastructure/repositories/product.repository.js';
-import { PRODUCT_REPOSITORY } from './domain/repositories/product.repository.interface.js';
-import { PinoLoggerAdapter } from '../../shared/infrastructure/logger/pino-logger.adapter.js';
-import type { ILogger } from '../../shared/domain/interfaces/logger.interface.js';
+import { CACHE_SERVICE } from '../../core/cache/cache.token';
+import type { ICacheService } from '../../core/cache/cache.interface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ProductController } from './presentation/controllers/product.controller';
+import { CreateProductUseCase } from './application/use-cases/create-product.use-case';
+import { ListProductsUseCase } from './application/use-cases/list-products.use-case';
+import { GetProductUseCase } from './application/use-cases/get-product.use-case';
+import { UpdateProductUseCase } from './application/use-cases/update-product.use-case';
+import { UpdateProductPriceUseCase } from './application/use-cases/update-product-price.use-case';
+import { UpdateProductAmountUseCase } from './application/use-cases/update-product-amount.use-case';
+import { DeleteProductUseCase } from './application/use-cases/delete-product.use-case';
+import { ProductCacheInvalidationHandler } from './application/event-handlers/product-cache-invalidation.handler';
+import { ProductRepository } from './infrastructure/repositories/product.repository';
+import { PRODUCT_REPOSITORY } from './domain/repositories/product.repository.interface';
+import { PinoLoggerAdapter } from '../../shared/infrastructure/logger/pino-logger.adapter';
+import type { ILogger } from '../../shared/domain/interfaces/logger.interface';
 
 const LOGGER_TOKEN = 'ILogger';
 
@@ -25,13 +27,15 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: CreateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: any) => new CreateProductUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
+      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
+        new CreateProductUseCase(logger, repo, eventEmitter),
     },
     {
       provide: ListProductsUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: any) => new ListProductsUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
+        new ListProductsUseCase(logger, repo, cache),
     },
     {
       provide: GetProductUseCase,
@@ -41,28 +45,29 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: UpdateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
-        new UpdateProductUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
+      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
+        new UpdateProductUseCase(logger, repo, eventEmitter),
     },
     {
       provide: UpdateProductPriceUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
-        new UpdateProductPriceUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
+      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
+        new UpdateProductPriceUseCase(logger, repo, eventEmitter),
     },
     {
       provide: UpdateProductAmountUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
-        new UpdateProductAmountUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
+      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
+        new UpdateProductAmountUseCase(logger, repo, eventEmitter),
     },
     {
       provide: DeleteProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: any, cache: ICacheService) =>
-        new DeleteProductUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
+      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
+        new DeleteProductUseCase(logger, repo, eventEmitter),
     },
+    ProductCacheInvalidationHandler,
     { provide: PRODUCT_REPOSITORY, useClass: ProductRepository },
   ],
 })

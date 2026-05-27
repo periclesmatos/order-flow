@@ -1,8 +1,12 @@
-import type { Product } from '../entities/product.entity.js';
+import type { Product } from '../entities/product.entity';
 
 export const PRODUCT_REPOSITORY = 'PRODUCT_REPOSITORY';
 
-export type ProductSortableField = 'name' | 'price' | 'createdAt' | 'stockOnHand';
+export type ProductSortableField =
+  | 'name'
+  | 'price'
+  | 'createdAt'
+  | 'stockOnHand';
 
 export interface ProductFilters {
   name?: string;

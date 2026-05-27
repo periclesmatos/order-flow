@@ -1,5 +1,9 @@
 import { Phone } from '@src/modules/customer/domain/entities/phone.value-object';
-import { PhoneEmptyError, PhoneInvalidFormatError, PhoneInvalidNumberError } from '@src/modules/customer/domain/errors/phone.errors';
+import {
+  PhoneEmptyError,
+  PhoneInvalidFormatError,
+  PhoneInvalidNumberError,
+} from '@src/modules/customer/domain/errors/phone.errors';
 
 describe('Phone value object', () => {
   describe('from() - BR', () => {
@@ -36,7 +40,9 @@ describe('Phone value object', () => {
     });
 
     it('rejects a Brazilian mobile missing the ninth digit', () => {
-      expect(() => Phone.from('+5511887654321')).toThrow(PhoneInvalidNumberError);
+      expect(() => Phone.from('+5511887654321')).toThrow(
+        PhoneInvalidNumberError,
+      );
     });
   });
 
@@ -59,7 +65,9 @@ describe('Phone value object', () => {
     });
 
     it('rejects an invalid country calling code', () => {
-      expect(() => Phone.from('+999123456789')).toThrow(PhoneInvalidFormatError);
+      expect(() => Phone.from('+999123456789')).toThrow(
+        PhoneInvalidFormatError,
+      );
     });
   });
 
@@ -90,7 +98,9 @@ describe('Phone value object', () => {
     });
 
     it('rejects an E.164 string without leading "+"', () => {
-      expect(() => Phone.fromE164('5511987654321')).toThrow(PhoneInvalidFormatError);
+      expect(() => Phone.fromE164('5511987654321')).toThrow(
+        PhoneInvalidFormatError,
+      );
     });
 
     it('rejects an empty string', () => {
@@ -102,7 +112,9 @@ describe('Phone value object', () => {
     it('formats a Brazilian mobile internationally', () => {
       const phone = Phone.from('+5511987654321');
 
-      expect(phone.formattedInternational).toMatch(/^\+55\s11\s98765[-\s]4321$/);
+      expect(phone.formattedInternational).toMatch(
+        /^\+55\s11\s98765[-\s]4321$/,
+      );
     });
 
     it('formats a Brazilian mobile in national format', () => {

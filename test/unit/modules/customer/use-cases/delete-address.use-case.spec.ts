@@ -20,8 +20,12 @@ import {
 
 describe('DeleteAddressUseCase', () => {
   let useCase: DeleteAddressUseCase;
-  let customerRepository: ReturnType<typeof mockAddressRepositories>['customerRepository'];
-  let addressRepository: ReturnType<typeof mockAddressRepositories>['addressRepository'];
+  let customerRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['customerRepository'];
+  let addressRepository: ReturnType<
+    typeof mockAddressRepositories
+  >['addressRepository'];
 
   beforeEach(async () => {
     const repos = mockAddressRepositories();
@@ -48,15 +52,18 @@ describe('DeleteAddressUseCase', () => {
 
     await useCase.execute(CUSTOMER_ID, ADDRESS_ID);
 
-    expect(addressRepository.delete).toHaveBeenCalledWith(CUSTOMER_ID, ADDRESS_ID);
+    expect(addressRepository.delete).toHaveBeenCalledWith(
+      CUSTOMER_ID,
+      ADDRESS_ID,
+    );
   });
 
   it('throws when customer not found', async () => {
     customerRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(CUSTOMER_ID, ADDRESS_ID)).rejects.toBeInstanceOf(
-      CustomerNotFoundError,
-    );
+    await expect(
+      useCase.execute(CUSTOMER_ID, ADDRESS_ID),
+    ).rejects.toBeInstanceOf(CustomerNotFoundError);
 
     expect(addressRepository.delete).not.toHaveBeenCalled();
   });
@@ -65,9 +72,9 @@ describe('DeleteAddressUseCase', () => {
     customerRepository.findById.mockResolvedValue(makeCustomer());
     addressRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(CUSTOMER_ID, ADDRESS_ID)).rejects.toBeInstanceOf(
-      AddressNotFoundError,
-    );
+    await expect(
+      useCase.execute(CUSTOMER_ID, ADDRESS_ID),
+    ).rejects.toBeInstanceOf(AddressNotFoundError);
 
     expect(addressRepository.delete).not.toHaveBeenCalled();
   });
@@ -78,9 +85,9 @@ describe('DeleteAddressUseCase', () => {
       makeAddress(OTHER_CUSTOMER_ID, ADDRESS_ID),
     );
 
-    await expect(useCase.execute(CUSTOMER_ID, ADDRESS_ID)).rejects.toBeInstanceOf(
-      AddressNotFoundError,
-    );
+    await expect(
+      useCase.execute(CUSTOMER_ID, ADDRESS_ID),
+    ).rejects.toBeInstanceOf(AddressNotFoundError);
 
     expect(addressRepository.delete).not.toHaveBeenCalled();
   });

@@ -1,5 +1,5 @@
-import type { Address } from '../../domain/entities/address.entity.js';
-import type { Customer } from '../../domain/entities/customer.entity.js';
+import type { Address } from '../../domain/entities/address.entity';
+import type { Customer } from '../../domain/entities/customer.entity';
 
 export interface AddressResponse {
   id: string;

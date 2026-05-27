@@ -45,7 +45,9 @@ describe('Money', () => {
 
   describe('multiply', () => {
     it('throws when factor is negative', () => {
-      expect(() => Money.fromCents(100).multiply(-1)).toThrow(MoneyNegativeFactorError);
+      expect(() => Money.fromCents(100).multiply(-1)).toThrow(
+        MoneyNegativeFactorError,
+      );
     });
 
     it('rounds product to integer cents', () => {

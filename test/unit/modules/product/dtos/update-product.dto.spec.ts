@@ -8,10 +8,18 @@ describe('UpdateProductSchema', () => {
   });
 
   it('rejects empty body', () => {
-    expectParseMessages(UpdateProductSchema, {}, 'Informe pelo menos um campo para atualizar.');
+    expectParseMessages(
+      UpdateProductSchema,
+      {},
+      'Informe pelo menos um campo para atualizar.',
+    );
   });
 
   it('rejects empty description', () => {
-    expectParseMessages(UpdateProductSchema, { description: '' }, 'Descrição é obrigatória');
+    expectParseMessages(
+      UpdateProductSchema,
+      { description: '' },
+      'Descrição é obrigatória',
+    );
   });
 });

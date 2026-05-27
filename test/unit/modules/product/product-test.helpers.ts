@@ -16,6 +16,8 @@ export function productCreateProps(
   };
 }
 
-export function createTestProduct(overrides: Partial<CreateProductProps> = {}): Product {
+export function createTestProduct(
+  overrides: Partial<CreateProductProps> = {},
+): Product {
   return Product.create(productCreateProps(overrides));
 }

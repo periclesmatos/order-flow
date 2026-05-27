@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CACHE_SERVICE } from '@src/core/cache/cache.token';
 import type { ICacheService } from '@src/core/cache/cache.interface';
 import { ProductController } from '@src/modules/product/presentation/controllers/product.controller';
@@ -17,6 +18,7 @@ import { InMemoryProductRepository } from './in-memory-product.repository';
 const LOGGER_TOKEN = 'ILogger';
 
 @Module({
+  imports: [EventEmitterModule.forRoot({ wildcard: false })],
   controllers: [ProductController],
   providers: [
     {
@@ -25,49 +27,75 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: CreateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new CreateProductUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        eventEmitter: any,
+      ) => new CreateProductUseCase(logger, repo, eventEmitter),
     },
     {
       provide: ListProductsUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository) =>
-        new ListProductsUseCase(logger, repo),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        cache: ICacheService,
+      ) => new ListProductsUseCase(logger, repo, cache),
     },
     {
       provide: CACHE_SERVICE,
-      useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } satisfies ICacheService,
+      useValue: {
+        get: jest.fn(),
+        set: jest.fn(),
+        del: jest.fn(),
+        delByPattern: jest.fn(),
+      } satisfies ICacheService,
     },
     {
       provide: GetProductUseCase,
       inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
-        new GetProductUseCase(logger, repo, cache),
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        cache: ICacheService,
+      ) => new GetProductUseCase(logger, repo, cache),
     },
     {
       provide: UpdateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
-        new UpdateProductUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        eventEmitter: any,
+      ) => new UpdateProductUseCase(logger, repo, eventEmitter),
     },
     {
       provide: UpdateProductPriceUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
-        new UpdateProductPriceUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        eventEmitter: any,
+      ) => new UpdateProductPriceUseCase(logger, repo, eventEmitter),
     },
     {
       provide: UpdateProductAmountUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
-        new UpdateProductAmountUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        eventEmitter: any,
+      ) => new UpdateProductAmountUseCase(logger, repo, eventEmitter),
     },
     {
       provide: DeleteProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CACHE_SERVICE],
-      useFactory: (logger: ILogger, repo: InMemoryProductRepository, cache: ICacheService) =>
-        new DeleteProductUseCase(logger, repo, cache),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, 'EventEmitter2'],
+      useFactory: (
+        logger: ILogger,
+        repo: InMemoryProductRepository,
+        eventEmitter: any,
+      ) => new DeleteProductUseCase(logger, repo, eventEmitter),
     },
     { provide: PRODUCT_REPOSITORY, useClass: InMemoryProductRepository },
   ],

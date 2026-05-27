@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
-import { AppModule } from './app.module.js';
-import { createQuietNestLogger } from './shared/infrastructure/logger/quiet-nest.logger.js';
-import { configureApp } from './shared/infrastructure/bootstrap/configure-app.js';
+import { AppModule } from './app.module';
+import { createQuietNestLogger } from './shared/infrastructure/logger/quiet-nest.logger';
+import { configureApp } from './shared/infrastructure/bootstrap/configure-app';
 
 const C = {
   reset: '\x1b[0m',

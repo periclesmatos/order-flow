@@ -4,8 +4,8 @@ import {
   ProductEmptyNameError,
   ProductNegativeAmountError,
   ProductNegativePriceError,
-} from '../errors/product.errors.js';
-import { Money } from './money.value-object.js';
+} from '../errors/product.errors';
+import { Money } from './money.value-object';
 
 export interface ProductProps {
   id: string;
@@ -135,7 +135,8 @@ export class Product {
   }
 
   fulfill(quantity: number): void {
-    if (this._props.reservedQuantity < quantity) throw new ProductNegativeAmountError();
+    if (this._props.reservedQuantity < quantity)
+      throw new ProductNegativeAmountError();
     this._props.stockOnHand -= quantity;
     this._props.reservedQuantity -= quantity;
     this._props.updatedAt = new Date();

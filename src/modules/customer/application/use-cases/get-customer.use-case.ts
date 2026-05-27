@@ -1,9 +1,9 @@
 import { Inject } from '@nestjs/common';
-import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface.js';
-import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface.js';
-import { CustomerNotFoundError } from '../../domain/errors/customer.errors.js';
-import type { Customer } from '../../domain/entities/customer.entity.js';
-import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface.js';
+import { CUSTOMER_REPOSITORY } from '../../domain/repositories/customer.repository.interface';
+import type { ICustomerRepository } from '../../domain/repositories/customer.repository.interface';
+import { CustomerNotFoundError } from '../../domain/errors/customer.errors';
+import type { Customer } from '../../domain/entities/customer.entity';
+import type { ILogger } from '../../../../shared/domain/interfaces/logger.interface';
 
 export class GetCustomerUseCase {
   constructor(

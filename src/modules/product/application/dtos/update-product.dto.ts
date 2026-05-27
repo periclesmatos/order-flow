@@ -8,7 +8,12 @@ const UpdateProductObjectSchema = z.object({
     .trim()
     .optional(),
   description: z
-    .string({ error: (issue) => (issue.input === undefined ? 'Descrição é obrigatória' : 'Descrição deve ser texto') })
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Descrição é obrigatória'
+          : 'Descrição deve ser texto',
+    })
     .min(1, 'Descrição é obrigatória')
     .max(255, 'Descrição deve ter no máximo 255 caracteres')
     .trim()
@@ -19,7 +24,10 @@ const UpdateProductObjectSchema = z.object({
 });
 
 export const UpdateProductSchema = UpdateProductObjectSchema.refine(
-  (d) => d.name !== undefined || d.description !== undefined || d.isActive !== undefined,
+  (d) =>
+    d.name !== undefined ||
+    d.description !== undefined ||
+    d.isActive !== undefined,
   { message: 'Informe pelo menos um campo para atualizar.' },
 );
 

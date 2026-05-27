@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { PrismaService } from '../../../../core/prisma/prisma.service.js';
-import { Address } from '../../domain/entities/address.entity.js';
-import type { IAddressRepository } from '../../domain/repositories/address.repository.interface.js';
+import { PrismaService } from '../../../../core/prisma/prisma.service';
+import { Address } from '../../domain/entities/address.entity';
+import type { IAddressRepository } from '../../domain/repositories/address.repository.interface';
 
 export type AddressRow = {
   id: string;

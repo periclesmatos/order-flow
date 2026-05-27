@@ -1,4 +1,4 @@
-import { DomainError } from '../../../../shared/domain/errors/domain.error.js';
+import { DomainError } from '../../../../shared/domain/errors/domain.error';
 
 export class ProductAlreadyExistsError extends DomainError {
   readonly statusCode = 409;
@@ -51,7 +51,9 @@ export class ProductNegativeAmountError extends DomainError {
 export class InsufficientStockError extends DomainError {
   readonly statusCode = 422;
   constructor(requested: number, available: number) {
-    super(`Estoque insuficiente: solicitado ${requested}, disponível ${available}.`);
+    super(
+      `Estoque insuficiente: solicitado ${requested}, disponível ${available}.`,
+    );
     this.name = 'InsufficientStockError';
   }
 }

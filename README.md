@@ -1,6 +1,6 @@
 # Order Flow
 
-API REST para gestão de clientes, produtos e pedidos, construída com **Clean Architecture** modular em NestJS.
+API REST de e-commerce para gestão de clientes, produtos e pedidos — construída com **Clean Architecture** modular em NestJS, com foco em **domínio testável e isolado de frameworks e infraestrutura**.
 
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)](https://www.typescriptlang.org/)
@@ -20,6 +20,7 @@ O código é organizado em camadas (Clean Architecture): a **regra de negócio f
 - CRUD de **clientes** com validação de e-mail e telefone (`libphonenumber-js`)
 - **Endereços** por cliente (criar, atualizar, remover, definir padrão)
 - CRUD de **produtos** com controle de preço, estoque e quantidade reservada
+- CRUD de **categorias** com proteção de integridade (bloqueio de remoção se houver produtos vinculados)
 - **Cache Redis** em leitura de produtos, com invalidação automática por eventos
 - **Health checks** (liveness e readiness com checagem do banco)
 
@@ -41,24 +42,60 @@ O código é organizado em camadas (Clean Architecture): a **regra de negócio f
 
 ## Arquitetura
 
-Cada módulo de negócio segue a mesma separação por responsabilidade:
+Cada módulo de negócio segue a mesma separação por responsabilidade, e **a dependência só aponta para dentro**: as camadas externas conhecem o domínio, nunca o contrário.
 
+```mermaid
+flowchart LR
+    P["presentation<br/>controllers · presenters · OpenAPI"]
+    A["application<br/>use cases · DTOs (Zod) · cache keys · events"]
+    D["domain<br/>entidades · value objects · erros · interfaces de repositório"]
+    I["infrastructure<br/>repositórios (Prisma)"]
+
+    P --> A
+    A --> D
+    I -. implementa interfaces .-> D
+
+    style D fill:#1f6feb,stroke:#0d419d,color:#fff
 ```
-presentation/   → controllers, presenters, docs OpenAPI
-application/    → use cases, DTOs (Zod), cache keys, event handlers
-domain/         → entidades, value objects, erros, interfaces de repositório
-infrastructure/ → implementação Prisma dos repositórios
-```
 
-**Regra de ouro:** `domain` não conhece nenhuma outra camada. Infra e apresentação dependem do domínio através de interfaces — nunca o contrário.
+**Regra de ouro:** `domain` não conhece nenhuma outra camada. Infraestrutura e apresentação dependem do domínio através de interfaces — a infra *implementa* contratos definidos no domínio (inversão de dependência).
 
-Fluxo de uma requisição:
+Fluxo de uma requisição — leitura usa cache; mutação dispara invalidação por evento:
 
-```
-HTTP → Controller → Use Case → Repository (Prisma) → PostgreSQL
-                       │
-                       ├─→ Domain (entidades + regras de negócio)
-                       └─→ Cache (Redis) em leitura de produtos
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Cliente HTTP
+    participant Ctrl as Controller
+    participant UC as Use Case
+    participant R as Repository (Prisma)
+    participant DB as PostgreSQL
+    participant Cache as Redis
+    participant EV as EventEmitter
+
+    C->>Ctrl: requisição (validada por ZodValidationPipe)
+    Ctrl->>UC: execute(dto)
+
+    alt Leitura (GET de produto)
+        UC->>Cache: get(chave)
+        alt cache hit
+            Cache-->>UC: dados
+        else cache miss
+            UC->>R: findById / findAll
+            R->>DB: query
+            DB-->>R: linhas
+            R-->>UC: entidade(s)
+            UC->>Cache: set(chave, ttl)
+        end
+    else Mutação (POST/PATCH/DELETE)
+        UC->>R: create / update / delete
+        R->>DB: comando (em transação via CLS)
+        UC->>EV: emite evento de mutação
+        EV->>Cache: handler invalida chaves afetadas
+    end
+
+    UC-->>Ctrl: entidade de domínio
+    Ctrl-->>C: resposta (via Presenter)
 ```
 
 Estrutura de pastas:
@@ -76,14 +113,72 @@ order-flow/
         └── order/         # 🚧 planejado
 ```
 
+## Destaques técnicos
+
+Pontos onde o projeto vai além do CRUD básico:
+
+- **Value objects ricos** — regras de negócio encapsuladas em tipos imutáveis, não espalhadas em services:
+  - `Money` guarda valor em centavos (inteiro) e expõe operações seguras, eliminando erro de ponto flutuante.
+  - `Email` normaliza e valida, expondo `local`/`domain`.
+  - `Phone` usa `libphonenumber-js` (parsing E.164, formatação nacional/internacional, DDD) e aplica a **regra da Anatel de 2014**: número móvel brasileiro (11 dígitos nacionais) precisa ter `9` como primeiro dígito após o DDD — caso contrário é rejeitado.
+- **Transações sem acoplamento** — use cases anotados com `@Transactional()`; o contexto transacional é propagado por `nestjs-cls` + `TransactionalAdapterPrisma`. O domínio não conhece `PrismaService` nem repassa o client transacional manualmente (sem *prop drilling*).
+- **Rastreabilidade de requisições** — `RequestIdMiddleware` gera/propaga `X-Request-Id`; o `LoggingInterceptor` registra `method`, `path`, `statusCode`, `durationMs` e `correlationId` em logs estruturados (Pino), correlacionando toda a requisição.
+- **Prisma com driver adapter PG** (`@prisma/adapter-pg`) — conexão via adapter (edge-ready), com ciclo de vida controlado em `onModuleInit`/`onModuleDestroy`.
+- **Rate limit seletivo** — `@nestjs/throttler` global (100 req/min por IP) aplicado como guard, com `@SkipThrottle()` nos health checks para não interferir em sondas de orquestrador.
+- **Tratamento de erros centralizado** — exceções de domínio estendem `DomainError` e são lançadas no núcleo; um filtro global traduz cada uma para o status HTTP correto, mantendo as camadas internas livres de HTTP.
+
 ## Modelo de dados
+
+```mermaid
+erDiagram
+    Customer ||--o{ Address : possui
+    Customer ||--o{ Order : faz
+    Category ||--o{ Product : agrupa
+    Order ||--|{ OrderItem : contém
+    Order ||--|| OrderDeliveryAddress : entrega
+    Product ||--o{ OrderItem : referenciado
+
+    Customer {
+        string id PK
+        string name
+        string email UK
+        string phone
+        bool isActive
+    }
+    Address {
+        string id PK
+        string customerId FK
+        bool isDefault
+    }
+    Product {
+        string id PK
+        string name
+        int price "centavos"
+        int stockOnHand
+        int reservedQuantity
+        string categoryId FK "opcional"
+    }
+    Category {
+        string id PK
+        string name
+        bool isActive
+    }
+    Order {
+        string id PK
+        string customerId FK
+        enum status "OrderStatus"
+    }
+```
+
+> As entidades **`Order`, `OrderItem` e `OrderDeliveryAddress`** já existem como modelo Prisma (com o enum `OrderStatus`), mas ainda **não têm casos de uso nem rotas** — ver [roadmap](#roadmap).
 
 | Entidade | Descrição |
 |----------|-----------|
 | **Customer** | nome, e-mail único, telefone, `isActive` |
 | **Address** | vinculado ao cliente, `isDefault`, remoção em cascata |
-| **Product** | nome, descrição, `price` (centavos), `stockOnHand`, `reservedQuantity` |
-| **Order** *(planejado)** | `Order`, `OrderItem`, `OrderDeliveryAddress` + enum `OrderStatus` |
+| **Product** | nome, descrição, `price` (centavos), `stockOnHand`, `reservedQuantity`, `categoryId` (opcional) |
+| **Category** | nome, `isActive`, relação opcional com `Product` |
+| **Order** *(planejado)* | `Order`, `OrderItem`, `OrderDeliveryAddress` + enum `OrderStatus` |
 
 ## Como rodar
 
@@ -116,6 +211,17 @@ Endpoints úteis após subir:
 > A API fica sob o prefixo `/api/v1`; `health` e `docs` ficam fora dele.
 
 ## Endpoints
+
+**Categorias** — `/api/v1/categories`
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/` | Criar categoria |
+| GET | `/` | Listar (paginação, filtro por nome parcial) |
+| GET | `/:id` | Buscar por ID |
+| PATCH | `/:id` | Atualizar nome |
+| PATCH | `/:id/deactivate` | Desativar (bloqueado se houver produtos vinculados) |
+| DELETE | `/:id` | Remover (bloqueado se houver produtos vinculados) |
 
 **Produtos** — `/api/v1/products`
 
@@ -160,36 +266,37 @@ Payloads e respostas completos no Swagger.
 
 ```bash
 npm run test       # unitários
-npm run test:e2e   # end-to-end (produtos e health)
+npm run test:e2e   # end-to-end (health, products, categories)
 npm run test:cov   # cobertura
 ```
 
-Há cobertura unitária ampla em `customer` e `product`. Antes de concluir uma mudança: `npm run typecheck && npm test`.
+**32 specs unitários + 3 e2e.** O isolamento de camadas é o que torna isso viável: os use cases são testados contra **repositórios in-memory** (implementações das mesmas interfaces de domínio), sem subir banco — testes rápidos e determinísticos. A cobertura inclui value objects (`Money`, `Email`, `Phone`), entidades, DTOs Zod e use cases de `customer` e `product`, além do filtro de exceções e do pipe de validação em `common`. Os e2e exercitam a stack HTTP real com Supertest.
+
+Antes de concluir uma mudança: `npm run typecheck && npm test`.
 
 ## Decisões técnicas
 
-Cada decisão abaixo resolve um problema concreto:
+Cada decisão abaixo resolve um problema concreto — e tem um custo assumido conscientemente:
 
-- **Camadas isoladas por módulo** — a regra de negócio (entidades, value objects, erros) não depende de NestJS nem Prisma. Resultado: testes rápidos com repositórios in-memory e liberdade para trocar infraestrutura.
+- **Camadas isoladas por módulo** — a regra de negócio não depende de NestJS nem Prisma, o que dá testes rápidos (in-memory) e liberdade para trocar infraestrutura. **Custo:** mais boilerplate — interfaces de repositório e mapeadores `toDomain`. **Descartado:** services anêmicos acoplados ao ORM, que misturam persistência e regra.
 
-- **Use cases explícitos** — cada operação é uma classe com um método `execute()`. Os controllers ficam finos (só validam e respondem), e a intenção de cada fluxo fica fácil de ler.
+- **Use cases explícitos** — cada operação é uma classe com um `execute()`; controllers ficam finos (validam e respondem) e a intenção de cada fluxo fica óbvia. **Custo:** muitas classes pequenas. **Benefício:** baixo acoplamento e fácil teste unitário por caso de uso.
 
-- **Zod nos DTOs** — a validação é declarativa e vira tipo TypeScript automaticamente. Uma única fonte de verdade para "o que é um payload válido".
+- **Zod nos DTOs** — validação declarativa que vira tipo TypeScript via `z.infer`: uma única fonte de verdade para "o que é um payload válido". **Descartado:** `class-validator` + `class-transformer`, que duplicam a forma entre classe e decorators e dependem de metadados.
 
-- **Dinheiro em centavos (`Int`)** — preço nunca é float. Um value object `Money` encapsula as regras e elimina erros de arredondamento.
+- **Dinheiro em centavos (`Int`)** — preço nunca é float; o value object `Money` encapsula as operações e elimina erro de arredondamento. **Custo:** conversão float↔centavos nas bordas (entrada da API e Presenter), centralizada no próprio `Money`.
 
-- **Cache com invalidação por eventos** — leituras de produto vêm do Redis; qualquer mutação emite um evento que limpa as chaves afetadas. Leitura rápida *sem* servir dados obsoletos.
+- **Cache com invalidação por eventos** — leituras de produto vêm do Redis; toda mutação emite um evento de domínio que limpa as chaves afetadas. Leitura rápida *sem* servir dado obsoleto. **Descartado:** TTL puro, que serviria dados desatualizados na janela do TTL. **Custo:** acoplamento indireto via eventos.
 
-- **Transações via CLS** — o contexto transacional é propagado automaticamente, sem acoplar os use cases ao `PrismaService`.
+- **Transações via CLS** — `@Transactional()` propaga o contexto pelo `AsyncLocalStorage`, sem repassar o client transacional caso a caso. **Custo:** dependência do CLS/AsyncLocalStorage. **Benefício:** use cases legíveis, sem *prop drilling* do Prisma.
 
-- **Erros de domínio** — exceções estendem `DomainError` e são lançadas no núcleo; um filtro global as traduz para a resposta HTTP correta. As camadas internas não conhecem HTTP.
+- **Erros de domínio** — exceções estendem `DomainError` e são lançadas no núcleo; um filtro global as traduz para o status HTTP correto. As camadas internas nunca conhecem HTTP.
 
-- **Observabilidade e endurecimento** — logs estruturados (Pino) com `correlationId` por requisição, Helmet, CORS configurável e rate limit global.
+- **Observabilidade e endurecimento** — logs estruturados (Pino) com `correlationId` por requisição, Helmet, CORS configurável e rate limit global (com health checks isentos).
 
 ## Roadmap
 
 - 🚧 **Order Service** — implementar `OrderModule` (use cases, repositórios, rotas) sobre os modelos já definidos
-- 🚧 **Categoria de produto** — nova entidade com relacionamento a `Product`
 - 🚧 **Autenticação e autorização**
 - 🚧 **CI/CD** — pipelines de build, teste e deploy
 

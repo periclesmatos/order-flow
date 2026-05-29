@@ -48,6 +48,7 @@ lerna-debug.log*
 
 # Claude Code
 CLAUDE.md
+.claude/
 
 # Runtime data
 pids

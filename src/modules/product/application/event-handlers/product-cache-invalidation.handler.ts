@@ -2,14 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { CACHE_SERVICE } from '../../../../core/cache/cache.token';
 import type { ICacheService } from '../../../../core/cache/cache.interface';
-import {
-  PRODUCT_LIST_CACHE_PATTERN,
-  productCacheKey,
-} from '../cache/product.cache-keys';
-import {
-  PRODUCT_MUTATED_EVENT,
-  type ProductMutatedEvent,
-} from '../../domain/events/product.events';
+import { PRODUCT_LIST_CACHE_PATTERN, productCacheKey } from '../cache/product.cache-keys';
+import { PRODUCT_MUTATED_EVENT, type ProductMutatedEvent } from '../../domain/events/product.events';
 
 @Injectable()
 export class ProductCacheInvalidationHandler {

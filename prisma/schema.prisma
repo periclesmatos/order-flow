@@ -41,26 +41,30 @@ model Address {
 }
 
 model Product {
-  id               String   @id @unique @default(uuid())
+  id               String    @id @unique @default(uuid())
   name             String
-  description      String   @default("")
+  description      String    @default("")
   price            Int
   stockOnHand      Int
-  reservedQuantity Int      @default(0)
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  reservedQuantity Int       @default(0)
+  isActive         Boolean   @default(true)
+  categoryId       String?
+  category         Category? @relation(fields: [categoryId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@map("products")
 }
 
-model ProductCategory {
-  id        String   @id @unique @default(uuid())
+model Category {
+  id        String    @id @unique @default(uuid())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean   @default(true)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  @@map("product_categories")
+  @@map("categories")
 }
 
 model Order {

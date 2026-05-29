@@ -15,6 +15,7 @@ export interface ProductProps {
   stockOnHand: number;
   reservedQuantity: number;
   isActive: boolean;
+  categoryId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,7 @@ export type CreateProductProps = {
   description: string;
   price: Money;
   stockOnHand: number;
+  categoryId?: string;
 };
 
 export class Product {
@@ -81,6 +83,10 @@ export class Product {
 
   get availableQuantity(): number {
     return this._props.stockOnHand - this._props.reservedQuantity;
+  }
+
+  get categoryId(): string | undefined {
+    return this._props.categoryId;
   }
 
   get isActive(): boolean {

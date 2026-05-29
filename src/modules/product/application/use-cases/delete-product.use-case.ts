@@ -21,10 +21,7 @@ export class DeleteProductUseCase {
     const product = await this.productRepository.findById(id);
     if (!product) throw new ProductNotFoundError(id);
     await this.productRepository.delete(product.id);
-    await this.eventEmitter.emitAsync(
-      PRODUCT_MUTATED_EVENT,
-      new ProductMutatedEvent(product.id),
-    );
+    await this.eventEmitter.emitAsync(PRODUCT_MUTATED_EVENT, new ProductMutatedEvent(product.id));
     this.logger.info({ productId: id }, 'PRODUCT DELETED');
   }
 }

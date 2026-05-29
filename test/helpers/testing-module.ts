@@ -9,6 +9,8 @@ import { ClsModule } from 'nestjs-cls';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
+import { CATEGORY_REPOSITORY } from '@src/modules/product/domain/repositories/category.repository.interface';
+import type { ICategoryRepository } from '@src/modules/product/domain/repositories/category.repository.interface';
 import { CUSTOMER_REPOSITORY } from '@src/modules/customer/domain/repositories/customer.repository.interface';
 import { ADDRESS_REPOSITORY } from '@src/modules/customer/domain/repositories/address.repository.interface';
 import type { ICustomerRepository } from '@src/modules/customer/domain/repositories/customer.repository.interface';
@@ -70,6 +72,17 @@ export function provideProductUseCaseWithEventEmitter<T>(
       repository: IProductRepository,
       eventEmitter: EventEmitter2,
     ) => new UseCaseClass(logger, repository, eventEmitter),
+  };
+}
+
+export function provideCategoryUseCase<T>(
+  UseCaseClass: new (logger: ILogger, repository: ICategoryRepository) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, CATEGORY_REPOSITORY],
+    useFactory: (logger: ILogger, repository: ICategoryRepository) =>
+      new UseCaseClass(logger, repository),
   };
 }
 

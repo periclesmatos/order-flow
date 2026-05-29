@@ -18,6 +18,7 @@ function toDomain(row: {
   stockOnHand: number;
   reservedQuantity: number;
   isActive: boolean;
+  categoryId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Product {
@@ -29,6 +30,7 @@ function toDomain(row: {
     stockOnHand: row.stockOnHand,
     reservedQuantity: row.reservedQuantity,
     isActive: row.isActive,
+    categoryId: row.categoryId ?? undefined,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   });
@@ -56,6 +58,7 @@ export class ProductRepository implements IProductRepository {
         stockOnHand: product.stockOnHand,
         reservedQuantity: product.reservedQuantity,
         isActive: product.isActive,
+        categoryId: product.categoryId ?? null,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       },
@@ -116,6 +119,7 @@ export class ProductRepository implements IProductRepository {
         stockOnHand: product.stockOnHand,
         reservedQuantity: product.reservedQuantity,
         isActive: product.isActive,
+        categoryId: product.categoryId ?? null,
         updatedAt: product.updatedAt,
       },
     });

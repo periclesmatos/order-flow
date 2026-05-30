@@ -21,6 +21,7 @@ describe('ListProductsUseCase', () => {
       findAll: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      lockByIds: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

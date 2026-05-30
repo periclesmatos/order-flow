@@ -19,12 +19,11 @@ O código é organizado em camadas (Clean Architecture): a **regra de negócio f
 
 - CRUD de **clientes** com validação de e-mail e telefone (`libphonenumber-js`)
 - **Endereços** por cliente (criar, atualizar, remover, definir padrão)
-- CRUD de **produtos** com controle de preço, estoque e quantidade reservada
-- CRUD de **categorias** com proteção de integridade (bloqueio de remoção se houver produtos vinculados)
-- **Cache Redis** em leitura de produtos, com invalidação automática por eventos
+- CRUD de **produtos** com controle de preço, estoque e quantidade reservada, e associação a **categoria** (validada na escrita e embutida no retorno)
+- CRUD de **categorias** com proteção de integridade (remoção bloqueada se houver produtos vinculados; desativação é livre)
+- **Pedidos** com múltiplos itens, endereço de entrega (snapshot do endereço do cliente) e numeração sequencial (`SEQUENCE` no banco). A criação **reserva estoque** dos produtos numa transação; a **máquina de estados** (`PENDING → PROCESSING → SHIPPED → DELIVERED`, e `CANCELLED`) baixa o estoque no envio e o cancelamento libera a reserva. **Controle de concorrência** com lock pessimista evita *oversell* em pedidos simultâneos
+- **Cache Redis** em leitura de produtos e pedidos, com invalidação automática por eventos
 - **Health checks** (liveness e readiness com checagem do banco)
-
-> **Pedidos (`Order`)** já têm modelo de dados definido no Prisma; os casos de uso e rotas estão no [roadmap](#roadmap).
 
 ## Stack
 
@@ -110,7 +109,7 @@ order-flow/
     └── modules/
         ├── customer/      # ✅ implementado
         ├── product/       # ✅ implementado (+ cache)
-        └── order/         # 🚧 planejado
+        └── order/         # ✅ implementado (+ cache, reserva de estoque, concorrência)
 ```
 
 ## Destaques técnicos
@@ -122,6 +121,7 @@ Pontos onde o projeto vai além do CRUD básico:
   - `Email` normaliza e valida, expondo `local`/`domain`.
   - `Phone` usa `libphonenumber-js` (parsing E.164, formatação nacional/internacional, DDD) e aplica a **regra da Anatel de 2014**: número móvel brasileiro (11 dígitos nacionais) precisa ter `9` como primeiro dígito após o DDD — caso contrário é rejeitado.
 - **Transações sem acoplamento** — use cases anotados com `@Transactional()`; o contexto transacional é propagado por `nestjs-cls` + `TransactionalAdapterPrisma`. O domínio não conhece `PrismaService` nem repassa o client transacional manualmente (sem *prop drilling*).
+- **Concorrência de estoque** — criar pedido e mudar status reservam/baixam estoque sob **lock pessimista** (`SELECT … FOR UPDATE`, ordenado por id para evitar deadlock) dentro da transação, impedindo *oversell* quando vários pedidos disputam o mesmo produto. O invariante continua no domínio (`Product.reserve/fulfill/release`); o lock é detalhe de persistência. A numeração de pedido usa `SEQUENCE` (atômica), e um `CHECK` no banco (`reservedQuantity ≤ stockOnHand`) é rede de segurança.
 - **Rastreabilidade de requisições** — `RequestIdMiddleware` gera/propaga `X-Request-Id`; o `LoggingInterceptor` registra `method`, `path`, `statusCode`, `durationMs` e `correlationId` em logs estruturados (Pino), correlacionando toda a requisição.
 - **Prisma com driver adapter PG** (`@prisma/adapter-pg`) — conexão via adapter (edge-ready), com ciclo de vida controlado em `onModuleInit`/`onModuleDestroy`.
 - **Rate limit seletivo** — `@nestjs/throttler` global (100 req/min por IP) aplicado como guard, com `@SkipThrottle()` nos health checks para não interferir em sondas de orquestrador.
@@ -170,15 +170,15 @@ erDiagram
     }
 ```
 
-> As entidades **`Order`, `OrderItem` e `OrderDeliveryAddress`** já existem como modelo Prisma (com o enum `OrderStatus`), mas ainda **não têm casos de uso nem rotas** — ver [roadmap](#roadmap).
-
 | Entidade | Descrição |
 |----------|-----------|
 | **Customer** | nome, e-mail único, telefone, `isActive` |
 | **Address** | vinculado ao cliente, `isDefault`, remoção em cascata |
 | **Product** | nome, descrição, `price` (centavos), `stockOnHand`, `reservedQuantity`, `categoryId` (opcional) |
 | **Category** | nome, `isActive`, relação opcional com `Product` |
-| **Order** *(planejado)* | `Order`, `OrderItem`, `OrderDeliveryAddress` + enum `OrderStatus` |
+| **Order** | número sequencial único, cliente, `status` (`OrderStatus`), itens e endereço de entrega; remoção dos filhos em cascata |
+| **OrderItem** | snapshot de `productName` + `price` (centavos) + `quantity` no momento do pedido |
+| **OrderDeliveryAddress** | snapshot imutável do endereço escolhido para entrega |
 
 ## Como rodar
 
@@ -220,7 +220,7 @@ Endpoints úteis após subir:
 | GET | `/` | Listar (paginação, filtro por nome parcial) |
 | GET | `/:id` | Buscar por ID |
 | PATCH | `/:id` | Atualizar nome |
-| PATCH | `/:id/deactivate` | Desativar (bloqueado se houver produtos vinculados) |
+| PATCH | `/:id/deactivate` | Desativar (permitido mesmo com produtos vinculados) |
 | DELETE | `/:id` | Remover (bloqueado se houver produtos vinculados) |
 
 **Produtos** — `/api/v1/products`
@@ -248,6 +248,16 @@ Endpoints úteis após subir:
 | PATCH | `/:customerId/addresses/:addressId/default` | Definir como padrão |
 | DELETE | `/:customerId/addresses/:addressId` | Remover endereço |
 
+**Pedidos** — `/api/v1/orders`
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/` | Criar pedido (valida cliente/endereço/produtos, reserva estoque) |
+| GET | `/` | Listar (paginação, filtros por status e cliente, ordenação — *com cache*) |
+| GET | `/:id` | Buscar por ID com itens e endereço (*com cache*) |
+| PATCH | `/:id/status` | Mudar status (máquina de estados; baixa/libera estoque) |
+| POST | `/:id/cancel` | Cancelar (libera a reserva de estoque) |
+
 Payloads e respostas completos no Swagger.
 
 ## Variáveis de ambiente
@@ -258,7 +268,9 @@ Payloads e respostas completos no Swagger.
 | `DATABASE_URL` | Connection string PostgreSQL | — |
 | `REDIS_URL` | URL do Redis | — |
 | `PRODUCT_CACHE_TTL_MS` | TTL do cache de produto | `300000` (5 min) |
-| `PRODUCT_LIST_CACHE_TTL_MS` | TTL do cache de listagem | `120000` (2 min) |
+| `PRODUCT_LIST_CACHE_TTL_MS` | TTL do cache de listagem de produtos | `120000` (2 min) |
+| `ORDER_CACHE_TTL_MS` | TTL do cache de pedido | `300000` (5 min) |
+| `ORDER_LIST_CACHE_TTL_MS` | TTL do cache de listagem de pedidos | `120000` (2 min) |
 | `LOG_LEVEL` | Nível de log (Pino) | `info` |
 | `CORS_ORIGIN` | Origens permitidas (separadas por vírgula) | todas em dev |
 
@@ -266,11 +278,13 @@ Payloads e respostas completos no Swagger.
 
 ```bash
 npm run test       # unitários
-npm run test:e2e   # end-to-end (health, products, categories)
+npm run test:e2e   # end-to-end (health, products, categories, orders)
 npm run test:cov   # cobertura
 ```
 
-**32 specs unitários + 3 e2e.** O isolamento de camadas é o que torna isso viável: os use cases são testados contra **repositórios in-memory** (implementações das mesmas interfaces de domínio), sem subir banco — testes rápidos e determinísticos. A cobertura inclui value objects (`Money`, `Email`, `Phone`), entidades, DTOs Zod e use cases de `customer` e `product`, além do filtro de exceções e do pipe de validação em `common`. Os e2e exercitam a stack HTTP real com Supertest.
+**277 testes unitários + 38 e2e.** O isolamento de camadas é o que torna isso viável: os use cases são testados contra **repositórios in-memory** (implementações das mesmas interfaces de domínio), sem subir banco — testes rápidos e determinísticos. A cobertura inclui value objects (`Money`, `Email`, `Phone`, `OrderNumber`), entidades (incluindo a máquina de estados de `Order`), DTOs Zod e use cases de `customer`, `product` e `order`, além do filtro de exceções e do pipe de validação em `common`. Os e2e exercitam a stack HTTP real com Supertest.
+
+> A corrida de estoque (oversell) não é coberta por teste automatizado — o harness e2e usa repositórios in-memory (single-thread). A trava é uma asserção de ordem (lock adquirido antes da escrita) e a validação foi feita manualmente contra o Postgres: N pedidos simultâneos para um produto escasso resultam em exatamente `stockOnHand` criados e o restante recusado com `422`, sem oversell.
 
 Antes de concluir uma mudança: `npm run typecheck && npm test`.
 
@@ -290,13 +304,15 @@ Cada decisão abaixo resolve um problema concreto — e tem um custo assumido co
 
 - **Transações via CLS** — `@Transactional()` propaga o contexto pelo `AsyncLocalStorage`, sem repassar o client transacional caso a caso. **Custo:** dependência do CLS/AsyncLocalStorage. **Benefício:** use cases legíveis, sem *prop drilling* do Prisma.
 
+- **Concorrência por lock pessimista** — reserva e baixa de estoque usam `SELECT … FOR UPDATE` (ordenado por id) dentro da transação, serializando apenas quem disputa o mesmo produto e mantendo a regra de estoque no domínio. **Descartado:** `UPDATE` condicional atômico (moveria o invariante para o SQL) e `Serializable` + retry (exigiria camada de retry/idempotência, e re-tentar a criação reconsumiria a numeração). **Custo:** contenção em produtos muito disputados — aceitável para o domínio de pedidos.
+
 - **Erros de domínio** — exceções estendem `DomainError` e são lançadas no núcleo; um filtro global as traduz para o status HTTP correto. As camadas internas nunca conhecem HTTP.
 
 - **Observabilidade e endurecimento** — logs estruturados (Pino) com `correlationId` por requisição, Helmet, CORS configurável e rate limit global (com health checks isentos).
 
 ## Roadmap
 
-- 🚧 **Order Service** — implementar `OrderModule` (use cases, repositórios, rotas) sobre os modelos já definidos
+- ✅ **Order Service** — `OrderModule` (use cases, repositórios, rotas) com reserva de estoque, máquina de estados e controle de concorrência
 - 🚧 **Autenticação e autorização**
 - 🚧 **CI/CD** — pipelines de build, teste e deploy
 

@@ -15,6 +15,8 @@ import { CUSTOMER_REPOSITORY } from '@src/modules/customer/domain/repositories/c
 import { ADDRESS_REPOSITORY } from '@src/modules/customer/domain/repositories/address.repository.interface';
 import type { ICustomerRepository } from '@src/modules/customer/domain/repositories/customer.repository.interface';
 import type { IAddressRepository } from '@src/modules/customer/domain/repositories/address.repository.interface';
+import { ORDER_REPOSITORY } from '@src/modules/order/domain/repositories/order.repository.interface';
+import type { IOrderRepository } from '@src/modules/order/domain/repositories/order.repository.interface';
 import type { ILogger } from '@src/shared/domain/interfaces/logger.interface';
 
 export const LOGGER_TOKEN = 'ILogger';
@@ -75,6 +77,26 @@ export function provideProductUseCaseWithEventEmitter<T>(
   };
 }
 
+export function provideProductUseCaseWithCategoryAndEvents<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    repository: IProductRepository,
+    categoryRepository: ICategoryRepository,
+    eventEmitter: EventEmitter2,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, 'EventEmitter2'],
+    useFactory: (
+      logger: ILogger,
+      repository: IProductRepository,
+      categoryRepository: ICategoryRepository,
+      eventEmitter: EventEmitter2,
+    ) => new UseCaseClass(logger, repository, categoryRepository, eventEmitter),
+  };
+}
+
 export function provideCategoryUseCase<T>(
   UseCaseClass: new (logger: ILogger, repository: ICategoryRepository) => T,
 ): Provider {
@@ -119,6 +141,84 @@ export function provideAddressUseCase<T>(
       addressRepo: IAddressRepository,
       customerRepo: ICustomerRepository,
     ) => new UseCaseClass(logger, addressRepo, customerRepo),
+  };
+}
+
+export function provideCreateOrderUseCase<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    orderRepository: IOrderRepository,
+    productRepository: IProductRepository,
+    customerRepository: ICustomerRepository,
+    addressRepository: IAddressRepository,
+    eventEmitter: EventEmitter2,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [
+      LOGGER_TOKEN,
+      ORDER_REPOSITORY,
+      PRODUCT_REPOSITORY,
+      CUSTOMER_REPOSITORY,
+      ADDRESS_REPOSITORY,
+      'EventEmitter2',
+    ],
+    useFactory: (
+      logger: ILogger,
+      orderRepository: IOrderRepository,
+      productRepository: IProductRepository,
+      customerRepository: ICustomerRepository,
+      addressRepository: IAddressRepository,
+      eventEmitter: EventEmitter2,
+    ) =>
+      new UseCaseClass(
+        logger,
+        orderRepository,
+        productRepository,
+        customerRepository,
+        addressRepository,
+        eventEmitter,
+      ),
+  };
+}
+
+export function provideChangeOrderStatusUseCase<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    orderRepository: IOrderRepository,
+    productRepository: IProductRepository,
+    eventEmitter: EventEmitter2,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, ORDER_REPOSITORY, PRODUCT_REPOSITORY, 'EventEmitter2'],
+    useFactory: (
+      logger: ILogger,
+      orderRepository: IOrderRepository,
+      productRepository: IProductRepository,
+      eventEmitter: EventEmitter2,
+    ) =>
+      new UseCaseClass(logger, orderRepository, productRepository, eventEmitter),
+  };
+}
+
+export function provideOrderUseCaseWithCache<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    orderRepository: IOrderRepository,
+    cache: ICacheService,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, ORDER_REPOSITORY, CACHE_SERVICE],
+    useFactory: (
+      logger: ILogger,
+      orderRepository: IOrderRepository,
+      cache: ICacheService,
+    ) => new UseCaseClass(logger, orderRepository, cache),
   };
 }
 

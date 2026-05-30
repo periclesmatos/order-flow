@@ -36,9 +36,13 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: CreateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
-      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
-        new CreateProductUseCase(logger, repo, eventEmitter),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, EventEmitter2],
+      useFactory: (
+        logger: ILogger,
+        repo: any,
+        categoryRepo: any,
+        eventEmitter: EventEmitter2,
+      ) => new CreateProductUseCase(logger, repo, categoryRepo, eventEmitter),
     },
     {
       provide: ListProductsUseCase,
@@ -54,9 +58,13 @@ const LOGGER_TOKEN = 'ILogger';
     },
     {
       provide: UpdateProductUseCase,
-      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, EventEmitter2],
-      useFactory: (logger: ILogger, repo: any, eventEmitter: EventEmitter2) =>
-        new UpdateProductUseCase(logger, repo, eventEmitter),
+      inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, EventEmitter2],
+      useFactory: (
+        logger: ILogger,
+        repo: any,
+        categoryRepo: any,
+        eventEmitter: EventEmitter2,
+      ) => new UpdateProductUseCase(logger, repo, categoryRepo, eventEmitter),
     },
     {
       provide: UpdateProductPriceUseCase,
@@ -116,5 +124,6 @@ const LOGGER_TOKEN = 'ILogger';
         new DeactivateCategoryUseCase(logger, repo),
     },
   ],
+  exports: [PRODUCT_REPOSITORY],
 })
 export class ProductModule {}

@@ -3,7 +3,9 @@ import request from 'supertest';
 import { createE2eApp } from '../helpers/create-e2e-app';
 
 const PRODUCTS = '/api/v1/products';
+const CATEGORIES = '/api/v1/categories';
 const DEFAULT_DESCRIPTION = 'Descrição do produto para testes';
+const MISSING_UUID = '00000000-0000-4000-8000-000000000000';
 
 const productBody = (overrides: Record<string, unknown> = {}) => ({
   name: 'Notebook',
@@ -212,5 +214,101 @@ describe('Products API (e2e)', () => {
     await request(app.getHttpServer()).delete(`${PRODUCTS}/${id}`).expect(204);
 
     return request(app.getHttpServer()).get(`${PRODUCTS}/${id}`).expect(404);
+  });
+
+  describe('relacionamento com categoria', () => {
+    const createCategory = async (name: string): Promise<string> => {
+      const res = await request(app.getHttpServer())
+        .post(CATEGORIES)
+        .send({ name })
+        .expect(201);
+      return res.body.id as string;
+    };
+
+    it('embute o objeto category ao criar/buscar/listar produto', async () => {
+      const categoryId = await createCategory('Eletrônicos');
+
+      const createRes = await request(app.getHttpServer())
+        .post(PRODUCTS)
+        .send(productBody({ name: 'Notebook com categoria', categoryId }))
+        .expect(201);
+
+      expect(createRes.body.category).toMatchObject({
+        id: categoryId,
+        name: 'Eletrônicos',
+        isActive: true,
+      });
+
+      const id = createRes.body.id as string;
+
+      await request(app.getHttpServer())
+        .get(`${PRODUCTS}/${id}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.category).toMatchObject({ id: categoryId, name: 'Eletrônicos' });
+        });
+
+      return request(app.getHttpServer())
+        .get(PRODUCTS)
+        .query({ page: 1, limit: 10, sortBy: 'name', order: 'asc' })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data[0].category).toMatchObject({ id: categoryId });
+        });
+    });
+
+    it('retorna category null quando o produto não tem categoria', () => {
+      return request(app.getHttpServer())
+        .post(PRODUCTS)
+        .send(productBody({ name: 'Sem categoria' }))
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.category).toBeNull();
+        });
+    });
+
+    it('retorna 404 ao criar produto com categoria inexistente', () => {
+      return request(app.getHttpServer())
+        .post(PRODUCTS)
+        .send(productBody({ name: 'Categoria fantasma', categoryId: MISSING_UUID }))
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.statusCode).toBe(404);
+        });
+    });
+
+    it('retorna 422 ao criar produto com categoria inativa', async () => {
+      const categoryId = await createCategory('Inativa');
+      await request(app.getHttpServer())
+        .patch(`${CATEGORIES}/${categoryId}/deactivate`)
+        .expect(200);
+
+      return request(app.getHttpServer())
+        .post(PRODUCTS)
+        .send(productBody({ name: 'Produto inativo', categoryId }))
+        .expect(422)
+        .expect((res) => {
+          expect(res.body.statusCode).toBe(422);
+        });
+    });
+
+    it('permite desativar categoria com produtos vinculados, mas bloqueia o delete', async () => {
+      const categoryId = await createCategory('Com produtos');
+      await request(app.getHttpServer())
+        .post(PRODUCTS)
+        .send(productBody({ name: 'Vinculado', categoryId }))
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`${CATEGORIES}/${categoryId}/deactivate`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.isActive).toBe(false);
+        });
+
+      return request(app.getHttpServer())
+        .delete(`${CATEGORIES}/${categoryId}`)
+        .expect(409);
+    });
   });
 });

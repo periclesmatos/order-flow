@@ -31,3 +31,11 @@ export class CategoryHasProductsError extends DomainError {
     this.name = 'CategoryHasProductsError';
   }
 }
+
+export class CategoryInactiveError extends DomainError {
+  readonly statusCode = 422;
+  constructor(id: string) {
+    super(`Não é possível associar o produto a uma categoria inativa (ID "${id}").`);
+    this.name = 'CategoryInactiveError';
+  }
+}

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { Prisma } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../../core/prisma/prisma.service';
 import { Product } from '../../domain/entities/product.entity';
 import type {
@@ -19,6 +20,7 @@ function toDomain(row: {
   reservedQuantity: number;
   isActive: boolean;
   categoryId: string | null;
+  category?: { id: string; name: string; isActive: boolean } | null;
   createdAt: Date;
   updatedAt: Date;
 }): Product {
@@ -31,10 +33,15 @@ function toDomain(row: {
     reservedQuantity: row.reservedQuantity,
     isActive: row.isActive,
     categoryId: row.categoryId ?? undefined,
+    category: row.category ?? undefined,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   });
 }
+
+const CATEGORY_INCLUDE = {
+  category: { select: { id: true, name: true, isActive: true } },
+} as const;
 
 @Injectable()
 export class ProductRepository implements IProductRepository {
@@ -62,17 +69,24 @@ export class ProductRepository implements IProductRepository {
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       },
+      include: CATEGORY_INCLUDE,
     });
     return toDomain(created);
   }
 
   async findByName(name: string): Promise<Product | null> {
-    const row = await this.db.product.findFirst({ where: { name } });
+    const row = await this.db.product.findFirst({
+      where: { name },
+      include: CATEGORY_INCLUDE,
+    });
     return row ? toDomain(row) : null;
   }
 
   async findById(id: string): Promise<Product | null> {
-    const row = await this.db.product.findUnique({ where: { id } });
+    const row = await this.db.product.findUnique({
+      where: { id },
+      include: CATEGORY_INCLUDE,
+    });
     return row ? toDomain(row) : null;
   }
 
@@ -103,6 +117,7 @@ export class ProductRepository implements IProductRepository {
         orderBy: orderByMap[filters.sortBy],
         skip: (filters.page - 1) * filters.limit,
         take: filters.limit,
+        include: CATEGORY_INCLUDE,
       }),
     ]);
 
@@ -122,11 +137,21 @@ export class ProductRepository implements IProductRepository {
         categoryId: product.categoryId ?? null,
         updatedAt: product.updatedAt,
       },
+      include: CATEGORY_INCLUDE,
     });
     return toDomain(updated);
   }
 
   async delete(id: string): Promise<void> {
     await this.db.product.delete({ where: { id } });
+  }
+
+  async lockByIds(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    // ORDER BY id garante ordem consistente de aquisição entre pedidos
+    // concorrentes, evitando deadlock. Os locks valem até o commit da tx.
+    await this.db.$queryRaw(
+      Prisma.sql`SELECT id FROM products WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`,
+    );
   }
 }

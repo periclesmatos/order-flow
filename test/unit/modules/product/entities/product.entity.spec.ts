@@ -167,6 +167,46 @@ describe('Product', () => {
     expect(p.isActive).toBe(true);
   });
 
+  describe('category', () => {
+    const snapshot = { id: 'cat-1', name: 'Eletrônicos', isActive: true };
+
+    it('restore keeps the category snapshot and toJSON round-trips it', () => {
+      const p = Product.restore({
+        id: 'id-1',
+        name: 'Restored',
+        description: 'Restored description',
+        price: 250,
+        stockOnHand: 10,
+        reservedQuantity: 3,
+        isActive: true,
+        categoryId: 'cat-1',
+        category: snapshot,
+        createdAt: baseCreated,
+        updatedAt: baseUpdated,
+      });
+
+      expect(p.categoryId).toBe('cat-1');
+      expect(p.category).toEqual(snapshot);
+      expect(p.toJSON().category).toEqual(snapshot);
+    });
+
+    it('assignCategory changes categoryId and bumps updatedAt', () => {
+      const p = createTestProduct();
+      const before = p.updatedAt.getTime();
+
+      p.assignCategory('cat-2');
+
+      expect(p.categoryId).toBe('cat-2');
+      expect(p.updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+    });
+
+    it('create without categoryId leaves category undefined', () => {
+      const p = createTestProduct();
+      expect(p.categoryId).toBeUndefined();
+      expect(p.category).toBeUndefined();
+    });
+  });
+
   it('toJSON exposes price as cents and description', () => {
     const p = Product.create({
       name: 'A',

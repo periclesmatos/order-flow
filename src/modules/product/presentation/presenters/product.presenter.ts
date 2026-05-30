@@ -1,4 +1,7 @@
-import type { Product } from '../../domain/entities/product.entity';
+import type {
+  Product,
+  ProductCategorySnapshot,
+} from '../../domain/entities/product.entity';
 
 export interface ProductResponse {
   id: string;
@@ -9,6 +12,7 @@ export interface ProductResponse {
   reservedQuantity: number;
   availableQuantity: number;
   isActive: boolean;
+  category: ProductCategorySnapshot | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +28,7 @@ export class ProductPresenter {
       reservedQuantity: product.reservedQuantity,
       availableQuantity: product.availableQuantity,
       isActive: product.isActive,
+      category: product.category ?? null,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };

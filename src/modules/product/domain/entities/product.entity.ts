@@ -7,6 +7,12 @@ import {
 } from '../errors/product.errors';
 import { Money } from './money.value-object';
 
+export type ProductCategorySnapshot = {
+  id: string;
+  name: string;
+  isActive: boolean;
+};
+
 export interface ProductProps {
   id: string;
   name: string;
@@ -16,6 +22,7 @@ export interface ProductProps {
   reservedQuantity: number;
   isActive: boolean;
   categoryId?: string;
+  category?: ProductCategorySnapshot;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -89,6 +96,10 @@ export class Product {
     return this._props.categoryId;
   }
 
+  get category(): ProductCategorySnapshot | undefined {
+    return this._props.category;
+  }
+
   get isActive(): boolean {
     return this._props.isActive;
   }
@@ -145,6 +156,11 @@ export class Product {
       throw new ProductNegativeAmountError();
     this._props.stockOnHand -= quantity;
     this._props.reservedQuantity -= quantity;
+    this._props.updatedAt = new Date();
+  }
+
+  assignCategory(categoryId?: string): void {
+    this._props.categoryId = categoryId;
     this._props.updatedAt = new Date();
   }
 

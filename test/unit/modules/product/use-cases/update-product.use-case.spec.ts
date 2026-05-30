@@ -2,24 +2,32 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UpdateProductUseCase } from '@src/modules/product/application/use-cases/update-product.use-case';
 import { PRODUCT_REPOSITORY } from '@src/modules/product/domain/repositories/product.repository.interface';
 import type { IProductRepository } from '@src/modules/product/domain/repositories/product.repository.interface';
+import { CATEGORY_REPOSITORY } from '@src/modules/product/domain/repositories/category.repository.interface';
+import type { ICategoryRepository } from '@src/modules/product/domain/repositories/category.repository.interface';
 import { Money } from '@src/modules/product/domain/entities/money.value-object';
 import {
   ProductAlreadyExistsError,
   ProductNotFoundError,
 } from '@src/modules/product/domain/errors/product.errors';
 import {
+  CategoryNotFoundError,
+  CategoryInactiveError,
+} from '@src/modules/product/domain/errors/category.errors';
+import {
   eventEmitterProvider,
   loggerProvider,
-  provideProductUseCaseWithEventEmitter,
+  provideProductUseCaseWithCategoryAndEvents,
 } from '@test/helpers/testing-module';
 import {
   createTestProduct,
   DEFAULT_PRODUCT_DESCRIPTION,
 } from '../product-test.helpers';
+import { createTestCategory } from '../category-test.helpers';
 
 describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let repository: jest.Mocked<IProductRepository>;
+  let categoryRepository: jest.Mocked<ICategoryRepository>;
 
   const makeProduct = (name = 'Original') =>
     createTestProduct({ name, price: Money.fromCents(500), stockOnHand: 3 });
@@ -33,13 +41,23 @@ describe('UpdateProductUseCase', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
+    categoryRepository = {
+      create: jest.fn(),
+      findByName: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      hasLinkedProducts: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        provideProductUseCaseWithEventEmitter(UpdateProductUseCase),
+        provideProductUseCaseWithCategoryAndEvents(UpdateProductUseCase),
         loggerProvider(),
         eventEmitterProvider(),
         { provide: PRODUCT_REPOSITORY, useValue: repository },
+        { provide: CATEGORY_REPOSITORY, useValue: categoryRepository },
       ],
     }).compile();
 
@@ -136,5 +154,44 @@ describe('UpdateProductUseCase', () => {
     await useCase.execute(p.id, { description: DEFAULT_PRODUCT_DESCRIPTION });
 
     expect(repository.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('assigns a new active category', async () => {
+    const p = makeProduct('Old');
+    const category = createTestCategory();
+    repository.findById.mockResolvedValue(p);
+    repository.update.mockImplementation(async (_, prod) => prod);
+    categoryRepository.findById.mockResolvedValue(category);
+
+    const result = await useCase.execute(p.id, { categoryId: category.id });
+
+    expect(categoryRepository.findById).toHaveBeenCalledWith(category.id);
+    expect(result.categoryId).toBe(category.id);
+  });
+
+  it('throws when assigning a non-existent category', async () => {
+    const p = makeProduct('Old');
+    repository.findById.mockResolvedValue(p);
+    categoryRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute(p.id, { categoryId: 'missing-id' }),
+    ).rejects.toBeInstanceOf(CategoryNotFoundError);
+
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('throws when assigning an inactive category', async () => {
+    const p = makeProduct('Old');
+    const category = createTestCategory();
+    category.deactivate();
+    repository.findById.mockResolvedValue(p);
+    categoryRepository.findById.mockResolvedValue(category);
+
+    await expect(
+      useCase.execute(p.id, { categoryId: category.id }),
+    ).rejects.toBeInstanceOf(CategoryInactiveError);
+
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

@@ -38,6 +38,7 @@ export const CreateProductSchema = z.object({
     })
     .int('Quantidade deve ser um número inteiro')
     .min(0, 'Quantidade não pode ser negativa'),
+  categoryId: z.uuid('ID de categoria inválido').optional(),
 });
 
 export type CreateProductDto = z.infer<typeof CreateProductSchema>;

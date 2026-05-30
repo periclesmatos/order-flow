@@ -21,13 +21,15 @@ const UpdateProductObjectSchema = z.object({
   isActive: z
     .boolean({ error: () => 'isActive deve ser verdadeiro ou falso' })
     .optional(),
+  categoryId: z.uuid('ID de categoria inválido').optional(),
 });
 
 export const UpdateProductSchema = UpdateProductObjectSchema.refine(
   (d) =>
     d.name !== undefined ||
     d.description !== undefined ||
-    d.isActive !== undefined,
+    d.isActive !== undefined ||
+    d.categoryId !== undefined,
   { message: 'Informe pelo menos um campo para atualizar.' },
 );
 

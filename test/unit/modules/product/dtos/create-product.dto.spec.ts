@@ -159,4 +159,27 @@ describe('CreateProductSchema', () => {
       expect(r.success).toBe(true);
     });
   });
+
+  describe('categoryId', () => {
+    const uuid = '550e8400-e29b-41d4-a716-446655440000';
+
+    it('accepts a valid uuid', () => {
+      const r = CreateProductSchema.safeParse({ ...valid, categoryId: uuid });
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.categoryId).toBe(uuid);
+    });
+
+    it('accepts payload without categoryId', () => {
+      const r = CreateProductSchema.safeParse(valid);
+      expect(r.success).toBe(true);
+    });
+
+    it('rejects an invalid uuid', () => {
+      expectParseMessages(
+        CreateProductSchema,
+        { ...valid, categoryId: 'not-a-uuid' },
+        'ID de categoria inválido',
+      );
+    });
+  });
 });

@@ -9,7 +9,17 @@ import type {
 @Injectable()
 export class InMemoryCategoryRepository implements ICategoryRepository {
   private readonly byId = new Map<string, Category>();
-  private linkedProductIds = new Set<string>();
+  private readonly linkCounts = new Map<string, number>();
+
+  registerLink(categoryId: string): void {
+    this.linkCounts.set(categoryId, (this.linkCounts.get(categoryId) ?? 0) + 1);
+  }
+
+  unregisterLink(categoryId: string): void {
+    const next = (this.linkCounts.get(categoryId) ?? 0) - 1;
+    if (next > 0) this.linkCounts.set(categoryId, next);
+    else this.linkCounts.delete(categoryId);
+  }
 
   async create(category: Category): Promise<Category> {
     this.byId.set(category.id, category);
@@ -43,7 +53,7 @@ export class InMemoryCategoryRepository implements ICategoryRepository {
   }
 
   async hasLinkedProducts(id: string): Promise<boolean> {
-    return this.linkedProductIds.has(id);
+    return (this.linkCounts.get(id) ?? 0) > 0;
   }
 
   async update(id: string, category: Category): Promise<Category> {

@@ -6,12 +6,14 @@ const CREATE_PRODUCT_BODY_EXAMPLE = {
   description: 'Notebook Dell Inspiron 15',
   price: 10.5,
   stockOnHand: 3,
+  categoryId: '550e8400-e29b-41d4-a716-446655440000',
 };
 
 const UPDATE_PRODUCT_BODY_EXAMPLE = {
   name: 'New Name',
   description: 'New Description',
   isActive: false,
+  categoryId: '550e8400-e29b-41d4-a716-446655440000',
 };
 
 const UPDATE_PRODUCT_PRICE_BODY_EXAMPLE = {

@@ -75,6 +75,26 @@ export function provideProductUseCaseWithEventEmitter<T>(
   };
 }
 
+export function provideProductUseCaseWithCategoryAndEvents<T>(
+  UseCaseClass: new (
+    logger: ILogger,
+    repository: IProductRepository,
+    categoryRepository: ICategoryRepository,
+    eventEmitter: EventEmitter2,
+  ) => T,
+): Provider {
+  return {
+    provide: UseCaseClass,
+    inject: [LOGGER_TOKEN, PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, 'EventEmitter2'],
+    useFactory: (
+      logger: ILogger,
+      repository: IProductRepository,
+      categoryRepository: ICategoryRepository,
+      eventEmitter: EventEmitter2,
+    ) => new UseCaseClass(logger, repository, categoryRepository, eventEmitter),
+  };
+}
+
 export function provideCategoryUseCase<T>(
   UseCaseClass: new (logger: ILogger, repository: ICategoryRepository) => T,
 ): Provider {

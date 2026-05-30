@@ -19,8 +19,8 @@ O código é organizado em camadas (Clean Architecture): a **regra de negócio f
 
 - CRUD de **clientes** com validação de e-mail e telefone (`libphonenumber-js`)
 - **Endereços** por cliente (criar, atualizar, remover, definir padrão)
-- CRUD de **produtos** com controle de preço, estoque e quantidade reservada
-- CRUD de **categorias** com proteção de integridade (bloqueio de remoção se houver produtos vinculados)
+- CRUD de **produtos** com controle de preço, estoque e quantidade reservada, e associação a **categoria** (validada na escrita e embutida no retorno)
+- CRUD de **categorias** com proteção de integridade (remoção bloqueada se houver produtos vinculados; desativação é livre)
 - **Cache Redis** em leitura de produtos, com invalidação automática por eventos
 - **Health checks** (liveness e readiness com checagem do banco)
 
@@ -220,7 +220,7 @@ Endpoints úteis após subir:
 | GET | `/` | Listar (paginação, filtro por nome parcial) |
 | GET | `/:id` | Buscar por ID |
 | PATCH | `/:id` | Atualizar nome |
-| PATCH | `/:id/deactivate` | Desativar (bloqueado se houver produtos vinculados) |
+| PATCH | `/:id/deactivate` | Desativar (permitido mesmo com produtos vinculados) |
 | DELETE | `/:id` | Remover (bloqueado se houver produtos vinculados) |
 
 **Produtos** — `/api/v1/products`

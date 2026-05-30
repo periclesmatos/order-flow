@@ -29,4 +29,10 @@ export interface IProductRepository {
   findAll(filters: ProductFilters): Promise<PageResult>;
   update(id: string, product: Product): Promise<Product>;
   delete(id: string): Promise<void>;
+  /**
+   * Adquire lock pessimista (SELECT ... FOR UPDATE) nas linhas dos produtos,
+   * serializando transações concorrentes que disputam o mesmo estoque.
+   * Deve ser chamado dentro de uma transação, antes de ler/alterar o estoque.
+   */
+  lockByIds(ids: string[]): Promise<void>;
 }

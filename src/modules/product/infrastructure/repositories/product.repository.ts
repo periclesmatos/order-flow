@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { Prisma } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../../core/prisma/prisma.service';
 import { Product } from '../../domain/entities/product.entity';
 import type {
@@ -143,5 +144,14 @@ export class ProductRepository implements IProductRepository {
 
   async delete(id: string): Promise<void> {
     await this.db.product.delete({ where: { id } });
+  }
+
+  async lockByIds(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    // ORDER BY id garante ordem consistente de aquisição entre pedidos
+    // concorrentes, evitando deadlock. Os locks valem até o commit da tx.
+    await this.db.$queryRaw(
+      Prisma.sql`SELECT id FROM products WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`,
+    );
   }
 }

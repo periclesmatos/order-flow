@@ -1,0 +1,310 @@
+####################################################################
+# Order Flow — dados de teste (REST Client / VS Code)
+#
+# Uso:
+#   1. Suba a API:  npm run start:dev   (porta padrão 3000)
+#   2. Instale a extensão "REST Client" (humao.rest-client) no VS Code
+#   3. Rode de cima para baixo. Cada requisição nomeada (# @name)
+#      guarda a resposta e é referenciada pelas seguintes
+#      (ex.: {{categoria.response.body.id}}). Por isso a ORDEM importa.
+#      Dica: clique em "Send Request" em cada bloco, em sequência.
+#
+# Cobre: 1 categoria, 3 produtos, 3 clientes (com endereço) e
+# 5 pedidos — um em cada status (PENDING, PROCESSING, SHIPPED,
+# DELIVERED, CANCELLED).
+####################################################################
+
+@baseUrl = http://localhost:3000/api/v1
+@json = application/json
+
+####################################################################
+# CATEGORIA
+####################################################################
+
+# @name categoria
+POST {{baseUrl}}/categories
+Content-Type: {{json}}
+
+{
+  "name": "Eletrônicos"
+}
+
+####################################################################
+# PRODUTOS (estoque alto para sobrar reserva em todos os pedidos)
+####################################################################
+
+# @name produtoNotebook
+POST {{baseUrl}}/products
+Content-Type: {{json}}
+
+{
+  "name": "Notebook Dell Inspiron 15",
+  "description": "Notebook 16GB RAM, SSD 512GB",
+  "price": 4500.00,
+  "stockOnHand": 50,
+  "categoryId": "{{categoria.response.body.id}}"
+}
+
+###
+
+# @name produtoMouse
+POST {{baseUrl}}/products
+Content-Type: {{json}}
+
+{
+  "name": "Mouse Logitech MX Master 3",
+  "description": "Mouse sem fio ergonômico",
+  "price": 399.90,
+  "stockOnHand": 200,
+  "categoryId": "{{categoria.response.body.id}}"
+}
+
+###
+
+# @name produtoTeclado
+POST {{baseUrl}}/products
+Content-Type: {{json}}
+
+{
+  "name": "Teclado Mecânico Keychron K8",
+  "description": "Teclado mecânico sem fio",
+  "price": 650.00,
+  "stockOnHand": 120,
+  "categoryId": "{{categoria.response.body.id}}"
+}
+
+####################################################################
+# CLIENTES (com endereço default inline — usado como entrega)
+####################################################################
+
+# @name clienteAna
+POST {{baseUrl}}/customers
+Content-Type: {{json}}
+
+{
+  "name": "Ana Souza",
+  "email": "ana.souza@example.com",
+  "phone": "+5511999990001",
+  "addresses": [
+    {
+      "street": "Rua das Flores",
+      "number": "100",
+      "complement": "Apto 12",
+      "neighborhood": "Centro",
+      "city": "São Paulo",
+      "state": "SP",
+      "postalCode": "01000-000",
+      "country": "BR",
+      "isDefault": true
+    }
+  ]
+}
+
+###
+
+# @name clienteBruno
+POST {{baseUrl}}/customers
+Content-Type: {{json}}
+
+{
+  "name": "Bruno Lima",
+  "email": "bruno.lima@example.com",
+  "phone": "+5511999990002",
+  "addresses": [
+    {
+      "street": "Avenida Paulista",
+      "number": "2000",
+      "complement": "",
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP",
+      "postalCode": "01310-200",
+      "country": "BR",
+      "isDefault": true
+    }
+  ]
+}
+
+###
+
+# @name clienteCarla
+POST {{baseUrl}}/customers
+Content-Type: {{json}}
+
+{
+  "name": "Carla Mendes",
+  "email": "carla.mendes@example.com",
+  "phone": "+5521999990003",
+  "addresses": [
+    {
+      "street": "Rua do Catete",
+      "number": "55",
+      "complement": "Casa",
+      "neighborhood": "Catete",
+      "city": "Rio de Janeiro",
+      "state": "RJ",
+      "postalCode": "22220-000",
+      "country": "BR",
+      "isDefault": true
+    }
+  ]
+}
+
+####################################################################
+# PEDIDO 1 — fica em PENDING
+####################################################################
+
+# @name pedidoPendente
+POST {{baseUrl}}/orders
+Content-Type: {{json}}
+
+{
+  "customerId": "{{clienteAna.response.body.id}}",
+  "addressId": "{{clienteAna.response.body.$.addresses[0].id}}",
+  "items": [
+    { "productId": "{{produtoNotebook.response.body.id}}", "quantity": 1 },
+    { "productId": "{{produtoMouse.response.body.id}}", "quantity": 2 }
+  ]
+}
+
+####################################################################
+# PEDIDO 2 — avança para PROCESSING
+####################################################################
+
+# @name pedidoProcessando
+POST {{baseUrl}}/orders
+Content-Type: {{json}}
+
+{
+  "customerId": "{{clienteBruno.response.body.id}}",
+  "addressId": "{{clienteBruno.response.body.$.addresses[0].id}}",
+  "items": [
+    { "productId": "{{produtoTeclado.response.body.id}}", "quantity": 1 }
+  ]
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoProcessando.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "PROCESSING"
+}
+
+####################################################################
+# PEDIDO 3 — avança até SHIPPED (baixa o estoque no SHIPPED)
+####################################################################
+
+# @name pedidoEnviado
+POST {{baseUrl}}/orders
+Content-Type: {{json}}
+
+{
+  "customerId": "{{clienteCarla.response.body.id}}",
+  "addressId": "{{clienteCarla.response.body.$.addresses[0].id}}",
+  "items": [
+    { "productId": "{{produtoMouse.response.body.id}}", "quantity": 3 }
+  ]
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoEnviado.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "PROCESSING"
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoEnviado.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "SHIPPED"
+}
+
+####################################################################
+# PEDIDO 4 — avança até DELIVERED
+####################################################################
+
+# @name pedidoEntregue
+POST {{baseUrl}}/orders
+Content-Type: {{json}}
+
+{
+  "customerId": "{{clienteAna.response.body.id}}",
+  "addressId": "{{clienteAna.response.body.$.addresses[0].id}}",
+  "items": [
+    { "productId": "{{produtoNotebook.response.body.id}}", "quantity": 1 },
+    { "productId": "{{produtoTeclado.response.body.id}}", "quantity": 1 }
+  ]
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoEntregue.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "PROCESSING"
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoEntregue.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "SHIPPED"
+}
+
+###
+
+PATCH {{baseUrl}}/orders/{{pedidoEntregue.response.body.id}}/status
+Content-Type: {{json}}
+
+{
+  "status": "DELIVERED"
+}
+
+####################################################################
+# PEDIDO 5 — cancelado (libera a reserva de estoque)
+####################################################################
+
+# @name pedidoCancelado
+POST {{baseUrl}}/orders
+Content-Type: {{json}}
+
+{
+  "customerId": "{{clienteBruno.response.body.id}}",
+  "addressId": "{{clienteBruno.response.body.$.addresses[0].id}}",
+  "items": [
+    { "productId": "{{produtoMouse.response.body.id}}", "quantity": 5 }
+  ]
+}
+
+###
+
+POST {{baseUrl}}/orders/{{pedidoCancelado.response.body.id}}/cancel
+
+####################################################################
+# CONSULTAS
+####################################################################
+
+### Detalhe de um pedido
+GET {{baseUrl}}/orders/{{pedidoEntregue.response.body.id}}
+
+### Lista paginada (mais recentes primeiro)
+GET {{baseUrl}}/orders?page=1&limit=10&sortBy=createdAt&order=desc
+
+### Filtra por status
+GET {{baseUrl}}/orders?status=SHIPPED
+
+### Filtra por cliente
+GET {{baseUrl}}/orders?customerId={{clienteAna.response.body.id}}
+
+### Confere o estoque de um produto (reservedQuantity / availableQuantity)
+GET {{baseUrl}}/products/{{produtoMouse.response.body.id}}

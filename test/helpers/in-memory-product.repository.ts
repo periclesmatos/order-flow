@@ -110,4 +110,7 @@ export class InMemoryProductRepository implements IProductRepository {
     if (previous?.categoryId) this.categoryRepository.unregisterLink(previous.categoryId);
     this.byId.delete(id);
   }
+
+  // No-op: o repositório in-memory é single-thread, sem corrida real.
+  async lockByIds(): Promise<void> {}
 }

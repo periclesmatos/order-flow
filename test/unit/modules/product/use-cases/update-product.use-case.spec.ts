@@ -40,6 +40,7 @@ describe('UpdateProductUseCase', () => {
       findAll: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      lockByIds: jest.fn(),
     };
     categoryRepository = {
       create: jest.fn(),

@@ -124,5 +124,6 @@ const LOGGER_TOKEN = 'ILogger';
         new DeactivateCategoryUseCase(logger, repo),
     },
   ],
+  exports: [PRODUCT_REPOSITORY],
 })
 export class ProductModule {}
